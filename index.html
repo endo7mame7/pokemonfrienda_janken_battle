@@ -124,7 +124,7 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 .f2 .spin{transform:rotate(180deg)}
 .fighter{--L:min(46vw,21vh,190px)}
 .cutin{--L:min(80vw,36vh,340px)}
-.result{--L:min(70vw,26vh,280px)}
+.result{--L:min(62vw,22vh,240px)}
 .fighter img,.cutin img{object-fit:contain}
 .ori-h{width:var(--L);height:calc(var(--L) / 1.62)}
 .ori-v{height:var(--L);width:calc(var(--L) / 1.62)}
@@ -142,14 +142,53 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 .banner .mv{font-size:.6em;color:#fff}
 #fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5}
 .quit{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.3);z-index:6;font-size:18px}
-.result{position:absolute;inset:0;z-index:14;background:linear-gradient(180deg,#1b2350,#10152e);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px}
-.result .w{font-family:var(--display);font-size:clamp(30px,10vw,48px);color:var(--sun);text-align:center}
-.result .w.lose{font-size:clamp(22px,7vw,34px);color:var(--muted)}
+.result{position:absolute;inset:0;z-index:14;overflow:hidden;background:radial-gradient(120% 70% at 50% 50%,#2a3470,#141a38 70%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center}
+/* 勝ったチームの色で 背景に放射光をゆっくり回す（--wc は finish() が入れる） */
+.result .rays{position:absolute;left:50%;top:50%;width:150vmax;height:150vmax;margin:-75vmax 0 0 -75vmax;
+  background:repeating-conic-gradient(from 0deg,rgba(var(--wc),.14) 0deg 5deg,rgba(var(--wc),0) 5deg 11deg);
+  animation:rayspin 26s linear infinite}
+@keyframes rayspin{to{transform:rotate(360deg)}}
+/* 放射光の上に うすい暗幕。中央ほど濃くして 文字のコントラストを確保する */
+.result .dim{position:absolute;inset:0;background:radial-gradient(72% 48% at 50% 50%,rgba(10,14,40,.74),rgba(10,14,40,.18))}
+/* 紙吹雪。1つずつ 位置・色・速さ・開始位置を変える */
+.confetti{position:absolute;inset:0;pointer-events:none}
+.confetti i{position:absolute;top:-12%;width:8px;height:13px;border-radius:2px;animation:fall linear infinite}
+@keyframes fall{to{transform:translateY(118vh) rotate(760deg)}}
+.result .stack{position:relative;display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;
+  max-height:100%;padding:8px 12px;box-sizing:border-box;overflow:hidden auto}
+.result .w{font-family:var(--display);font-size:clamp(28px,9.5vw,44px);color:var(--sun);text-align:center;
+  text-shadow:0 4px 0 rgba(0,0,0,.35)}
+.result .w.lose{font-size:clamp(19px,6vw,28px);color:#c9d2f0;text-shadow:0 2px 0 rgba(0,0,0,.45)}
 .result .w.flip{transform:rotate(180deg)}
-.result .sweep{font-family:var(--display);font-size:clamp(13px,3.6vw,17px);color:#fff;text-align:center;padding-inline:16px;line-height:1.3}
+.result .sweep{font-family:var(--display);font-size:clamp(12px,3.4vw,16px);color:#fff;text-align:center;line-height:1.3;text-shadow:0 2px 0 rgba(0,0,0,.45)}
 .result .sweep.flip{transform:rotate(180deg)}
-.result img{object-fit:contain;animation:bob 1.2s ease-in-out infinite}
+.result .crown{font-size:clamp(26px,8vw,36px);line-height:1}
+/* 勝者ピックの後ろに ふわっとした光 */
+.result .champ{position:relative;display:grid;place-items:center;padding:6px}
+.result .champ::before{content:'';position:absolute;width:150%;aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,210,63,.5),rgba(255,210,63,0) 68%)}
+.result img{position:relative;object-fit:contain;animation:bob 1.2s ease-in-out infinite;
+  filter:drop-shadow(0 8px 0 rgba(0,0,0,.35))}
 @keyframes bob{50%{transform:translateY(-10px) rotate(-4deg)}}
+.result .hp{display:flex;gap:3px;font-size:19px;line-height:1}
+.result .hp .gone{opacity:.2;filter:grayscale(1)}
+/* チーム戦績：たおれたピックは 白黒にする */
+.teamline{display:flex;align-items:center;gap:5px;justify-content:center;flex-wrap:wrap;
+  background:rgba(10,14,40,.5);padding:4px 9px;border-radius:99px}
+.teamline.flip{transform:rotate(180deg)}
+.teamline b{font-family:var(--display);font-size:11px;padding:3px 9px;border-radius:99px}
+.teamline.t1 b{background:var(--p1)} .teamline.t2 b{background:var(--p2)}
+.teamline i{position:relative;display:block;width:30px;height:20px;background-size:contain;background-repeat:no-repeat;
+  background-position:center;border-radius:2px}
+.teamline i.down{filter:grayscale(1) brightness(.55)}
+.teamline i.down::after{content:'✕';position:absolute;inset:0;display:grid;place-items:center;
+  font-size:14px;font-weight:800;color:#ff5d52;text-shadow:0 1px 2px #000}
+/* 上から順に ぽんぽん出す */
+.result .pop{animation:pop .42s cubic-bezier(.2,.9,.3,1.35) backwards}
+@keyframes pop{from{opacity:0;transform:scale(.55)}}
+.result .flip.pop{animation-name:popflip}
+@keyframes popflip{from{opacity:0;transform:rotate(180deg) scale(.55)}to{transform:rotate(180deg) scale(1)}}
 
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:grid;place-items:center;z-index:20;padding-inline:16px}
 .modal .box{background:#fff;color:var(--ink);border-radius:18px;padding:20px;max-width:340px;width:100%;display:flex;flex-direction:column;gap:14px;text-align:center;font-weight:800}
@@ -168,7 +207,10 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 .cutin .ct b{display:block;color:var(--sun);font-weight:400;font-size:1.25em}
 .cutin .ct.bot{bottom:9%}
 .cutin .ct.top{top:9%;transform:rotate(180deg)}
-@media (prefers-reduced-motion:reduce){.result img{animation:none}}
+@media (prefers-reduced-motion:reduce){
+  .result img,.result .rays,.confetti i,.result .pop{animation:none}
+  .confetti{display:none}
+}
 </style>
 </head>
 <body>
@@ -922,16 +964,40 @@ async function finish(w, l){
   // それぞれの子には 自分がわの結果 を、自分から読める向きで出す
   const line = q => `${sideName(q)}の ${q === w ? 'かち！' : 'まけ'}`;
   const wcls = q => 'w' + (q === w ? '' : ' lose');
+  // 上から順にぽんぽん出していく
+  let t = .05;
+  const pop = (html, step = .12) => { const h = html.replace('<%D%>', `animation-delay:${t.toFixed(2)}s`); t += step; return h; };
+  // チームの戦績。たおれたピックは白黒になる
+  const strip = q => pop(`<div class="teamline t${q}${q === 2 ? ' flip' : ''} pop" style="<%D%>"><b>${sideName(q)}</b>`
+    + B.team[q].map((x, i) => `<i class="${B.hp[q][i] > 0 ? '' : 'down'}" style="background-image:url(${x.img})"></i>`).join('')
+    + `</div>`);
+  const hearts = Array.from({length:MAXHP}, (_, i) => `<span class="${i < curHp(w) ? '' : 'gone'}">❤️</span>`).join('');
+  const team = B.size > 1;
+
   const r = document.createElement('div'); r.className = 'result';
-  r.innerHTML = `<div class="${wcls(2)} flip">${line(2)}</div>`
-    + (sweep ? `<div class="sweep flip">${sweepHTML}</div>` : '')
-    + `<img class="ori-${pk.orient || 'h'}" src="${pk.img}" alt="">`
-    + (sweep ? `<div class="sweep">${sweepHTML}</div>` : '')
-    + `<div class="${wcls(1)}">${line(1)}</div>
-    <div class="row"><button class="btn small" id="again">もういっかい</button><button class="btn sub small" id="toHome">ピックを かえる</button></div>`;
+  r.style.setProperty('--wc', w === 1 ? '255,93,82' : '35,184,232');
+  const conf = Array.from({length:26}, () => {
+    const col = ['#ffd23f', '#fff', '#ffe98a', `rgb(${w === 1 ? '255,93,82' : '35,184,232'})`][Math.floor(Math.random()*4)];
+    return `<i style="left:${(Math.random()*100).toFixed(1)}%;background:${col};`
+      + `animation-duration:${(2.6 + Math.random()*2.8).toFixed(2)}s;animation-delay:${(-Math.random()*5).toFixed(2)}s"></i>`;
+  }).join('');
+
+  r.innerHTML = `<div class="rays"></div><div class="dim"></div><div class="confetti">${conf}</div><div class="stack">`
+    + (team ? strip(2) : '')
+    + pop(`<div class="${wcls(2)} flip pop" style="<%D%>">${line(2)}</div>`)
+    + (sweep ? pop(`<div class="sweep flip pop" style="<%D%>">${sweepHTML}</div>`) : '')
+    + pop(`<div class="crown pop" style="<%D%>">👑</div>`)
+    + pop(`<div class="champ pop" style="<%D%>"><img class="ori-${pk.orient || 'h'}" src="${pk.img}" alt=""></div>`, .16)
+    + pop(`<div class="hp pop" style="<%D%>">${hearts}</div>`)
+    + (sweep ? pop(`<div class="sweep pop" style="<%D%>">${sweepHTML}</div>`) : '')
+    + pop(`<div class="${wcls(1)} pop" style="<%D%>">${line(1)}</div>`)
+    + (team ? strip(1) : '')
+    + pop(`<div class="row pop" style="<%D%>"><button class="btn small" id="again">もういっかい</button><button class="btn sub small" id="toHome">ピックを かえる</button></div>`)
+    + `</div>`;
   $('#battle').append(r);   // アリーナではなくバトル画面全体を覆い、下の手えらびを隠す
   sfx.say(sweep ? `${who}の かんぜんしょうり！` : `${who}の かち！`);
-  [523,659,784,1047].forEach((f,i) => setTimeout(() => sfx.tone(f,.18), i*130));
+  [523,659,784,1047,1319].forEach((f,i) => setTimeout(() => sfx.tone(f,.2,'square',.12), i*120));
+  setTimeout(() => sfx.noise(.5, 3200, .1), 620);   // キラキラ
   r.querySelector('#again').onclick = startBattle;
   r.querySelector('#toHome').onclick = () => show('home');
 }
