@@ -142,8 +142,9 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 .banner .mv{font-size:.6em;color:#fff}
 #fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5}
 .quit{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.3);z-index:6;font-size:18px}
-.result{position:absolute;inset:0;z-index:8;background:rgba(20,26,56,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px}
+.result{position:absolute;inset:0;z-index:14;background:linear-gradient(180deg,#1b2350,#10152e);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px}
 .result .w{font-family:var(--display);font-size:clamp(30px,10vw,48px);color:var(--sun);text-align:center}
+.result .w.lose{font-size:clamp(22px,7vw,34px);color:var(--muted)}
 .result .w.flip{transform:rotate(180deg)}
 .result .sweep{font-family:var(--display);font-size:clamp(13px,3.6vw,17px);color:#fff;text-align:center;padding-inline:16px;line-height:1.3}
 .result .sweep.flip{transform:rotate(180deg)}
@@ -918,14 +919,17 @@ async function finish(w, l){
   const sweep = B.size > 1 && B.idx[w] === 0;
   const sweepHTML = sweep ? `${esc(pk.name)}が ひとりで ぜんいん たおした！` : '';
   setBanner('やったー！');
+  // それぞれの子には 自分がわの結果 を、自分から読める向きで出す
+  const line = q => `${sideName(q)}の ${q === w ? 'かち！' : 'まけ'}`;
+  const wcls = q => 'w' + (q === w ? '' : ' lose');
   const r = document.createElement('div'); r.className = 'result';
-  r.innerHTML = `<div class="w flip">${who}の かち！</div>`
+  r.innerHTML = `<div class="${wcls(2)} flip">${line(2)}</div>`
     + (sweep ? `<div class="sweep flip">${sweepHTML}</div>` : '')
     + `<img class="ori-${pk.orient || 'h'}" src="${pk.img}" alt="">`
     + (sweep ? `<div class="sweep">${sweepHTML}</div>` : '')
-    + `<div class="w">${who}の かち！</div>
+    + `<div class="${wcls(1)}">${line(1)}</div>
     <div class="row"><button class="btn small" id="again">もういっかい</button><button class="btn sub small" id="toHome">ピックを かえる</button></div>`;
-  $('#arena').append(r);
+  $('#battle').append(r);   // アリーナではなくバトル画面全体を覆い、下の手えらびを隠す
   sfx.say(sweep ? `${who}の かんぜんしょうり！` : `${who}の かち！`);
   [523,659,784,1047].forEach((f,i) => setTimeout(() => sfx.tone(f,.18), i*130));
   r.querySelector('#again').onclick = startBattle;
