@@ -1,0 +1,2 @@
+# pokemonfrienda_janken_battle
+ポケモンフレンダのピックを使ったジャンケン型対戦ゲームです。
