@@ -70,6 +70,8 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 .vs.n3 .slot .chip{display:none}   /* 3対3は枠が低いので タイプ表示は省く */
 .vsmark{font-family:var(--display);font-size:26px;color:var(--sun)}
 .homeacts{display:flex;flex-direction:column;gap:14px;align-items:stretch}
+.ver{margin:-6px 0 0;text-align:center;font-size:11px;color:var(--muted);opacity:.75;
+  font-variant-numeric:tabular-nums;-webkit-user-select:text;user-select:text}
 .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
 
 /* dex / select */
@@ -237,6 +239,7 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
       <button class="btn sub small" id="goDex">ピックずかん（とうろく）</button>
       <button class="btn sub small" id="soundBtn">おと：オン</button>
     </div>
+    <p class="ver" id="ver"></p>
   </div>
 </section>
 
@@ -297,6 +300,12 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 <script>
 (() => {
 /* ---------- データ ---------- */
+/* 開発用のバージョン表示。index.html に手を入れたら ここも更新する。
+   iPhoneのホーム画面から起動すると 古いキャッシュのままのことがあるので、
+   いま端末に入っているものを ホーム下部で確認できるようにしている */
+const VERSION = '0.3.0';
+const BUILD = '2026-09-16';
+
 const TYPES = [
   ['ノーマル','#9a9a7a','normal'],['ほのお','#f0582a','fire'],['みず','#3a8cf0','water'],['でんき','#e8b800','elec'],
   ['くさ','#4cae3c','grass'],['こおり','#5cc8d8','ice'],['かくとう','#c0352b','fight'],['どく','#9a43a8','ghost'],
@@ -1005,6 +1014,7 @@ $('#quitBtn').onclick = () => confirmBox('バトルを やめますか？', () =
 window.addEventListener('resize', () => { if (!$('#battle').hidden) sizeFx(); });
 
 /* 起動 */
+$('#ver').textContent = `v${VERSION} (${BUILD})`;
 loadPicks().then(() => {
   show('home');   // renderHome() が fitTeams() でチームを自動的に埋める
 });
