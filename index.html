@@ -39,13 +39,35 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 .logo h1{font-size:clamp(30px,9vw,44px);line-height:1.15;letter-spacing:.02em}
 .logo h1 span{display:block;color:var(--sun);-webkit-text-stroke:0}
 .logo p{margin:6px 0 0;color:var(--muted);font-size:13px}
+.sizesel{display:flex;flex-direction:column;align-items:center;gap:8px}
+.sizesel .lb{font-family:var(--display);font-size:15px;color:var(--sun)}
+.sizebtn{padding:9px 16px;border-radius:99px;font-family:var(--display);font-size:15px;background:var(--ground2);color:#fff;box-shadow:0 3px 0 rgba(0,0,0,.3)}
+.sizebtn.on{background:var(--sun);color:var(--ink)}
+.sizebtn[disabled]{opacity:.35;box-shadow:none}
+.sizehint{margin:0;color:var(--muted);font-size:12px;text-align:center}
 .vs{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px}
-.slot{border-radius:20px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;min-height:170px;justify-content:center}
+.side{display:flex;flex-direction:column;gap:8px;min-width:0}
+.sidelb{font-family:var(--display);font-size:16px;text-align:center}
+.side.s1 .sidelb{color:var(--p1)} .side.s2 .sidelb{color:var(--p2)}
+.slot{border-radius:20px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;min-height:170px;justify-content:center;width:100%;box-sizing:border-box}
 .slot.p1{background:var(--p1)} .slot.p2{background:var(--p2)}
-.slot .who{font-family:var(--display);font-size:16px}
 .slot img{max-height:96px;max-width:100%;filter:drop-shadow(0 3px 0 rgba(0,0,0,.25))}
 .slot .empty{width:90px;height:90px;border:3px dashed rgba(255,255,255,.7);border-radius:16px;display:grid;place-items:center;font-size:34px}
+.slot .meta{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
 .slot .nm{font-weight:800;font-size:14px;text-align:center;line-height:1.2}
+.slot .ord{display:none}
+/* チーム戦：スロットを縦に積むので、1枠を低くして 出場順バッジは角に逃がす */
+.vs.team .slot{position:relative;min-height:0;gap:5px;padding:8px 6px}
+.vs.team .slot .ord{display:grid;place-items:center;position:absolute;left:5px;top:5px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.3);font-family:var(--display);font-size:11px}
+.vs.team .slot img{height:52px;width:auto}
+.vs.team .slot .empty{width:46px;height:46px;border-width:2px;border-radius:10px;font-size:20px}
+.vs.team .slot .meta{gap:4px;width:100%}
+.vs.team .slot .nm{font-size:11px;line-height:1.25;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vs.team .slot .chip{font-size:10px;padding:2px 7px;white-space:nowrap}
+.vs.n3 .slot{gap:3px;padding:6px 5px}
+.vs.n3 .slot img{height:42px}
+.vs.n3 .slot .empty{width:38px;height:38px}
+.vs.n3 .slot .chip{display:none}   /* 3対3は枠が低いので タイプ表示は省く */
 .vsmark{font-family:var(--display);font-size:26px;color:var(--sun)}
 .homeacts{display:flex;flex-direction:column;gap:14px;align-items:stretch}
 .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
@@ -57,6 +79,8 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 .card .nm{font-weight:800;font-size:14px}
 .chip{display:inline-block;font-size:11px;font-weight:800;padding:2px 8px;border-radius:99px;color:#fff}
 .card .del{position:absolute;top:4px;right:4px;width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.35);font-size:14px}
+.card.used{opacity:.55}
+.card .usedlb{font-size:10px;font-weight:800;color:var(--sun);line-height:1.2}
 .card.sel{outline:4px solid var(--sun)}
 .addcard{border:3px dashed var(--muted);background:transparent;min-height:150px;justify-content:center;font-weight:800;color:var(--muted)}
 .addcard b{font-size:38px;line-height:1}
@@ -107,6 +131,11 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 .fighter img{filter:drop-shadow(0 6px 0 rgba(0,0,0,.35))}
 .hearts{display:flex;flex-direction:column;gap:2px;font-size:22px;line-height:1}
 .hearts .gone{opacity:.2;filter:grayscale(1)}
+.stat{display:flex;flex-direction:column;align-items:center;gap:6px}
+.roster{display:flex;gap:4px}
+.roster i{width:10px;height:15px;border-radius:3px;border-bottom-left-radius:7px;background:#fff;opacity:.25}
+.roster i.alive{opacity:1}
+.roster i.cur{box-shadow:0 0 0 2px var(--sun)}
 .throw{font-size:44px;width:56px;text-align:center;opacity:0}
 .banner{font-family:var(--display);font-size:clamp(26px,8vw,40px);color:var(--sun);text-align:center;text-shadow:0 4px 0 rgba(0,0,0,.35);min-height:1.2em;display:flex;flex-direction:column;align-items:center;gap:2px}
 .banner .flip{transform:rotate(180deg);font-size:.55em;color:#fff}
@@ -116,6 +145,8 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 .result{position:absolute;inset:0;z-index:8;background:rgba(20,26,56,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px}
 .result .w{font-family:var(--display);font-size:clamp(30px,10vw,48px);color:var(--sun);text-align:center}
 .result .w.flip{transform:rotate(180deg)}
+.result .sweep{font-family:var(--display);font-size:clamp(13px,3.6vw,17px);color:#fff;text-align:center;padding-inline:16px;line-height:1.3}
+.result .sweep.flip{transform:rotate(180deg)}
 .result img{object-fit:contain;animation:bob 1.2s ease-in-out infinite}
 @keyframes bob{50%{transform:translateY(-10px) rotate(-4deg)}}
 
@@ -147,10 +178,15 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
     <h1>ピック<span>じゃんけんバトル</span></h1>
     <p>ピックをえらんで、じゃんけんで しょうぶ！</p>
   </div>
-  <div class="vs">
-    <button class="slot p1" id="slot1" data-player="1"></button>
+  <div class="sizesel">
+    <div class="lb">なんにんで たたかう？</div>
+    <div class="row" id="sizeRow"></div>
+    <p class="sizehint" id="sizeHint" hidden></p>
+  </div>
+  <div class="vs" id="vsArea">
+    <div class="side s1" id="side1"></div>
     <div class="vsmark">VS</div>
-    <button class="slot p2" id="slot2" data-player="2"></button>
+    <div class="side s2" id="side2"></div>
   </div>
   <div class="homeacts">
     <button class="btn" id="goBattle">バトル スタート！</button>
@@ -206,9 +242,9 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 <section class="screen" id="battle" hidden>
   <div class="zone p2" id="zone2"><div class="msg"></div><div class="hands"></div></div>
   <div class="arena" id="arena">
-    <div class="fighter f2" id="f2"><div class="spin"><div class="hearts"></div><img alt=""><div class="throw"></div></div></div>
+    <div class="fighter f2" id="f2"><div class="spin"><div class="stat"><div class="hearts"></div><div class="roster"></div></div><img alt=""><div class="throw"></div></div></div>
     <div class="banner" id="banner"></div>
-    <div class="fighter f1" id="f1"><div class="spin"><div class="throw"></div><img alt=""><div class="hearts"></div></div></div>
+    <div class="fighter f1" id="f1"><div class="spin"><div class="throw"></div><img alt=""><div class="stat"><div class="hearts"></div><div class="roster"></div></div></div></div>
     <canvas id="fx"></canvas>
     <button class="quit" id="quitBtn" aria-label="やめる">✕</button>
   </div>
@@ -301,7 +337,35 @@ async function loadPicks(){
     picks = [a, b];
   }
 }
-const chosen = {1:null, 2:null};
+/* チーム編成：1対1／2対2／3対3 の勝ち抜き戦。team[p][i] はピックのid */
+const SIZES = [1, 2, 3];
+const SIZE_LABEL = {1:'1たい1', 2:'2たい2', 3:'3たい3'};
+const ORD = ['1ばんめ', '2ばんめ', '3ばんめ'];
+const sideName = p => p === 1 ? 'あか' : 'あお';
+let teamSize = 1;
+const team = {1:[], 2:[]};
+
+/* 人数ぶんの枠に整え、空きを未使用のピックで自動的に埋める。
+   同じチーム内での重複は不可。相手チームとの重複は可（登録が少なくても遊べるように） */
+function fitTeams(){
+  for (const p of [1, 2]){
+    const t = team[p].slice(0, teamSize);
+    for (let i = 0; i < t.length; i++){
+      if (!picks.some(x => x.id === t[i])) t[i] = null;        // 消されたピック
+      else if (t.indexOf(t[i]) < i) t[i] = null;                // チーム内の重複
+    }
+    while (t.length < teamSize) t.push(null);
+    for (let i = 0; i < teamSize; i++){
+      if (t[i]) continue;
+      const other = team[3 - p];
+      const free = picks.find(x => !t.includes(x.id) && !other.includes(x.id))
+                || picks.find(x => !t.includes(x.id));
+      t[i] = free ? free.id : null;
+    }
+    team[p] = t;
+  }
+}
+const teamReady = () => [1,2].every(p => team[p].length === teamSize && team[p].every(Boolean));
 
 /* ---------- 画面遷移 ---------- */
 const $ = s => document.querySelector(s);
@@ -326,24 +390,61 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':
 
 /* ホーム */
 function renderHome(){
-  for (const p of [1,2]){
-    const pk = picks.find(x => x.id === chosen[p]);
-    if (!pk) chosen[p] = null;
-    $('#slot'+p).innerHTML = `<div class="who">${p===1?'あか':'あお'}</div>` +
-      (pk ? `<img src="${pk.img}" alt=""><div class="nm">${esc(pk.name)}</div>${chipHTML(pk.type)}`
-          : `<div class="empty">？</div><div class="nm">タップして えらぶ</div>`);
+  // チーム内は重複なしなので、選べる人数は登録数が上限になる
+  const maxN = Math.max(1, Math.min(3, picks.length));
+  if (teamSize > maxN) teamSize = maxN;
+  fitTeams();
+
+  const row = $('#sizeRow'); row.innerHTML = '';
+  for (const n of SIZES){
+    const b = document.createElement('button');
+    b.className = 'sizebtn' + (n === teamSize ? ' on' : '');
+    b.textContent = SIZE_LABEL[n];
+    b.disabled = n > maxN;
+    b.onclick = () => { teamSize = n; sfx.unlock(); sfx.tone(760, .07); renderHome(); };
+    row.append(b);
   }
-  $('#goBattle').disabled = !(chosen[1] && chosen[2]);
+  const hint = $('#sizeHint');
+  hint.hidden = maxN >= 3;
+  hint.textContent = `ピックを ${3 - maxN}まい とうろくすると 3たい3も できるよ`;
+
+  $('#vsArea').className = 'vs' + (teamSize > 1 ? ' team n' + teamSize : '');
+  for (const p of [1, 2]){
+    const side = $('#side'+p);
+    side.innerHTML = `<div class="sidelb">${sideName(p)}</div>`;
+    for (let i = 0; i < teamSize; i++){
+      const pk = picks.find(x => x.id === team[p][i]);
+      const b = document.createElement('button');
+      b.className = 'slot p' + p;
+      b.innerHTML = `<div class="ord">${i+1}</div>` + (pk
+        ? `<img src="${pk.img}" alt=""><div class="meta"><div class="nm">${esc(pk.name)}</div>${chipHTML(pk.type)}</div>`
+        : `<div class="empty">？</div><div class="meta"><div class="nm">タップして えらぶ</div></div>`);
+      b.onclick = () => { selFor = {p, i}; renderSelect(); show('select'); };
+      side.append(b);
+    }
+  }
+  $('#goBattle').disabled = !teamReady();
+  $('#goBattle').textContent = teamSize > 1 ? `${SIZE_LABEL[teamSize]} で スタート！` : 'バトル スタート！';
 }
-let selFor = 1;
-document.querySelectorAll('.slot').forEach(b => b.onclick = () => { selFor = +b.dataset.player; renderSelect(); show('select'); });
+let selFor = {p:1, i:0};
 function renderSelect(){
-  $('#selTitle').textContent = `${selFor===1?'あか':'あお'}の ピックを えらぼう`;
+  const {p, i} = selFor;
+  $('#selTitle').textContent = teamSize > 1
+    ? `${sideName(p)}の ${ORD[i]}を えらぼう`
+    : `${sideName(p)}の ピックを えらぼう`;
   const g = $('#selGrid'); g.innerHTML = '';
   for (const pk of picks){
-    const c = document.createElement('button'); c.className = 'card' + (chosen[selFor]===pk.id?' sel':'');
-    c.innerHTML = `<img src="${pk.img}" alt=""><div class="nm">${esc(pk.name)}</div>${chipHTML(pk.type)}`;
-    c.onclick = () => { chosen[selFor] = pk.id; sfx.tone(880,.08); show('home'); };
+    const at = team[p].indexOf(pk.id);          // 同じチームで使用中の枠
+    const used = at >= 0 && at !== i;
+    const c = document.createElement('button');
+    c.className = 'card' + (team[p][i] === pk.id ? ' sel' : '') + (used ? ' used' : '');
+    c.innerHTML = `<img src="${pk.img}" alt=""><div class="nm">${esc(pk.name)}</div>${chipHTML(pk.type)}`
+      + (used ? `<div class="usedlb">${ORD[at]}で つかってるよ</div>` : '');
+    c.onclick = () => {
+      if (used){ team[p][at] = team[p][i]; toast(`${ORD[at]}と いれかえたよ`); }  // 重複させずに入れ替える
+      team[p][i] = pk.id;
+      sfx.tone(880, .08); show('home');
+    };
     g.append(c);
   }
 }
@@ -584,30 +685,52 @@ function tick(){
 }
 
 /* ---------- バトル ---------- */
-const B = {hp:{1:MAXHP,2:MAXHP}, pick:{1:null,2:null}, choice:{1:null,2:null}, busy:false, over:false};
+/* size 人ずつの勝ち抜き戦。team/hp は出場順の配列、idx が今たたかっているピック */
+const B = {size:1, team:{1:[],2:[]}, hp:{1:[],2:[]}, idx:{1:0,2:0}, choice:{1:null,2:null}, busy:false, over:false};
+const cur = p => B.team[p][B.idx[p]];
+const curHp = p => B.hp[p][B.idx[p]] ?? 0;
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const center = el => { const a = el.getBoundingClientRect(), b = $('#arena').getBoundingClientRect(); return {x:a.left - b.left + a.width/2, y:a.top - b.top + a.height/2}; };
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function startBattle(){
-  B.hp = {1:MAXHP, 2:MAXHP}; B.over = false;
+  B.size = teamSize; B.over = false;
   for (const p of [1,2]){
-    B.pick[p] = picks.find(x => x.id === chosen[p]);
-    const f = $('#f'+p);
-    const im = f.querySelector('img'); im.src = B.pick[p].img; im.className = 'ori-' + (B.pick[p].orient || 'h');
-    f.getAnimations().forEach(a => a.cancel());
-    f.style.opacity = 1;
+    B.team[p] = team[p].map(id => picks.find(x => x.id === id));
+    B.hp[p] = B.team[p].map(() => MAXHP);
+    B.idx[p] = 0;
+    resetFighter(p);
+    setFighter(p);
   }
   $('.result')?.remove();
   show('battle');
   requestAnimationFrame(sizeFx);
-  renderHearts();
+  renderHearts(); renderRoster();
   newRound();
-  sfx.say('バトル スタート！');
+  sfx.say(B.size > 1 ? `${SIZE_LABEL[B.size]} バトル スタート！` : 'バトル スタート！');
+}
+/* 前のピックの退場アニメーションを消して、素の状態に戻す */
+function resetFighter(p){
+  const f = $('#f'+p);
+  f.getAnimations().forEach(a => a.cancel());
+  f.style.opacity = 1; f.style.transform = '';
+}
+function setFighter(p){
+  const pk = cur(p), im = $('#f'+p).querySelector('img');
+  im.src = pk.img; im.className = 'ori-' + (pk.orient || 'h');
 }
 function renderHearts(){
   for (const p of [1,2]){
-    $('#f'+p+' .hearts').innerHTML = Array.from({length:MAXHP}, (_,i) => `<span class="${i < B.hp[p] ? '' : 'gone'}">❤️</span>`).join('');
+    const hp = curHp(p);
+    $('#f'+p+' .hearts').innerHTML = Array.from({length:MAXHP}, (_,i) => `<span class="${i < hp ? '' : 'gone'}">❤️</span>`).join('');
+  }
+}
+function renderRoster(){
+  for (const p of [1,2]){
+    const r = $('#f'+p+' .roster');
+    r.hidden = B.size < 2;
+    r.innerHTML = B.team[p].map((_, i) =>
+      `<i class="${B.hp[p][i] > 0 ? 'alive' : ''}${i === B.idx[p] ? ' cur' : ''}"></i>`).join('');
   }
 }
 function newRound(){
@@ -669,9 +792,14 @@ async function resolve(){
   }
   const win = BEATS[a] === b ? 1 : 2, lose = 3 - win;
   await attack(win, lose);
-  B.hp[lose]--; renderHearts();
+  B.hp[lose][B.idx[lose]]--; renderHearts(); renderRoster();
   await wait(500);
-  if (B.hp[lose] <= 0) return finish(win, lose);
+  if (curHp(lose) <= 0){
+    await knockOut(lose);
+    B.idx[lose]++; renderRoster();
+    if (B.idx[lose] >= B.size) return finish(win, lose);   // 全員たおれた＝チームの負け
+    await swapIn(lose);
+  }
   newRound();
 }
 let speedLines = null;
@@ -720,7 +848,7 @@ async function cutIn(w, pk){
   await out.finished; c.remove();
 }
 async function attack(w, l){
-  const pk = B.pick[w], kind = typeInfo(pk.type)[2];
+  const pk = cur(w), kind = typeInfo(pk.type)[2];
   const A = $('#f'+w), D = $('#f'+l);
   const ca = center(A), cd = center(D), dy = (cd.y - ca.y) * 0.72;
   // 技名は こうげきした がわ だけに 見える向きで出す
@@ -757,21 +885,48 @@ function arenaShake(){
   if (reduce) return;
   $('#arena').animate([{transform:'translate(0,0)'},{transform:'translate(5px,-4px)'},{transform:'translate(-5px,3px)'},{transform:'translate(3px,2px)'},{transform:'translate(0,0)'}], {duration:260});
 }
-async function finish(w, l){
-  B.over = true;
+/* たおれたピックが 回転しながら ふっとぶ */
+async function knockOut(l){
   const D = $('#f'+l), cd = center(D);
-  setBanner('やったー！');
+  setBanner(B.size > 1 ? `${sideName(l)}の ${ORD[B.idx[l]]} ダウン！` : 'やったー！');
   sfx.tone(300, .8, 'sawtooth', .1, 60);
-  burst(typeInfo(B.pick[w].type)[2], cd.x, cd.y, 1.6);
+  burst(typeInfo(cur(3 - l).type)[2], cd.x, cd.y, 1.6);
   await D.animate([{transform:'translate(0,0) rotate(0) scale(1)', opacity:1},
     {transform:`translate(${l===1?160:-160}px, ${l===1?220:-220}px) rotate(${l===1?720:-720}deg) scale(.3)`, opacity:0}],
     {duration:reduce?10:1100, easing:'ease-in', fill:'forwards'}).finished;
-  const pk = B.pick[w], who = w===1 ? 'あか' : 'あお';
+}
+/* つぎのピックが 自分がわから 登場する。ハートは 3つで 仕切りなおし */
+async function swapIn(p){
+  const f = $('#f'+p), pk = cur(p);
+  resetFighter(p);
+  setFighter(p);
+  renderHearts(); renderRoster();
+  setBanner(`${sideName(p)}の こうたい！`, pk.name);
+  sfx.say(`つぎは ${pk.name}`);
+  [587, 784, 988].forEach((hz, i) => setTimeout(() => sfx.tone(hz, .14), i*110));
+  await f.animate([
+    {transform:`translateY(${p===1 ? 130 : -130}%) scale(.5)`, opacity:0},
+    {transform:'translateY(0) scale(1.1)', opacity:1, offset:.72},
+    {transform:'translateY(0) scale(1)', opacity:1}],
+    {duration: reduce ? 10 : 620, easing:'cubic-bezier(.2,.9,.3,1.2)'}).finished;
+  await wait(reduce ? 0 : 500);
+}
+async function finish(w, l){
+  B.over = true;
+  const pk = cur(w), who = sideName(w);
+  // 先鋒のまま勝ち切った＝ひとりで相手チームを全滅させた
+  const sweep = B.size > 1 && B.idx[w] === 0;
+  const sweepHTML = sweep ? `${esc(pk.name)}が ひとりで ぜんいん たおした！` : '';
+  setBanner('やったー！');
   const r = document.createElement('div'); r.className = 'result';
-  r.innerHTML = `<div class="w flip">${who}の かち！</div><img class="ori-${pk.orient || 'h'}" src="${pk.img}" alt=""><div class="w">${who}の かち！</div>
+  r.innerHTML = `<div class="w flip">${who}の かち！</div>`
+    + (sweep ? `<div class="sweep flip">${sweepHTML}</div>` : '')
+    + `<img class="ori-${pk.orient || 'h'}" src="${pk.img}" alt="">`
+    + (sweep ? `<div class="sweep">${sweepHTML}</div>` : '')
+    + `<div class="w">${who}の かち！</div>
     <div class="row"><button class="btn small" id="again">もういっかい</button><button class="btn sub small" id="toHome">ピックを かえる</button></div>`;
   $('#arena').append(r);
-  sfx.say(`${who}の かち！`);
+  sfx.say(sweep ? `${who}の かんぜんしょうり！` : `${who}の かち！`);
   [523,659,784,1047].forEach((f,i) => setTimeout(() => sfx.tone(f,.18), i*130));
   r.querySelector('#again').onclick = startBattle;
   r.querySelector('#toHome').onclick = () => show('home');
@@ -781,8 +936,7 @@ window.addEventListener('resize', () => { if (!$('#battle').hidden) sizeFx(); })
 
 /* 起動 */
 loadPicks().then(() => {
-  chosen[1] = picks[0]?.id || null; chosen[2] = (picks[1] || picks[0])?.id || null;
-  show('home');
+  show('home');   // renderHome() が fitTeams() でチームを自動的に埋める
 });
 })();
 </script>
