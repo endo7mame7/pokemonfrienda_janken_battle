@@ -161,11 +161,8 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
   animation:rbflow 1.4s linear infinite}
 .megaask img{object-fit:contain;filter:drop-shadow(0 0 12px #c56bff)}
 .megaask .nm{font-weight:800;font-size:13px;text-align:center}
-/* きずなが満タンになった1回だけ 出る操作の案内 */
-.mhint{position:absolute;left:50%;top:3px;transform:translateX(-50%);z-index:4;white-space:nowrap;
-  background:var(--rb);background-size:200% 100%;animation:rbflow 1.6s linear infinite;
-  color:#fff;font-weight:800;font-size:12px;padding:5px 13px;border-radius:99px;
-  text-shadow:0 1px 2px rgba(0,0,0,.65);box-shadow:0 2px 0 rgba(0,0,0,.35)}
+/* きずなが満タンになった1回だけ、手えらびの案内を さしかえて操作を伝える */
+.zone .msg.hintmsg{font-size:14px;color:var(--sun)}
 .bond i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:linear-gradient(90deg,#f0582a,#ffb03f,#ffd23f);transition:width .45s ease}
 .bond b{position:absolute;inset:0;display:grid;place-items:center;font-size:9px;font-weight:800;color:#fff;
   text-shadow:0 1px 2px rgba(0,0,0,.95),0 0 3px rgba(0,0,0,.7);letter-spacing:.02em}
@@ -187,7 +184,7 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 .fighter.mega::before{content:'';position:absolute;inset:-16%;border-radius:50%;z-index:-1;
   background:var(--rbc);filter:blur(16px);opacity:.5;animation:rbspin 3.5s linear infinite}
 @media (prefers-reduced-motion:reduce){
-  .bond.full i,.bond.mega i,.fighter.canmega img,.mhint,.megaask .ttl,.megabadge,.fighter.mega img,.fighter.mega::before,
+  .bond.full i,.bond.mega i,.fighter.canmega img,.megaask .ttl,.megabadge,.fighter.mega img,.fighter.mega::before,
   .megacut .rbrays,.megacut .rings i,.megacut .stone,.megacut .ct b,.cutin.mega .ct b,
   .megaintro .stone,.megaintro .band,.megaintro .ct b,.megaintro .shock{animation:none}
   .fighter.mega img{filter:drop-shadow(0 0 12px #c56bff) drop-shadow(0 0 22px #ffd23f) drop-shadow(0 6px 0 rgba(0,0,0,.35))}
@@ -441,7 +438,7 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 /* 開発用のバージョン表示。index.html に手を入れたら ここも更新する。
    iPhoneのホーム画面から起動すると 古いキャッシュのままのことがあるので、
    いま端末に入っているものを ホーム下部で確認できるようにしている */
-const VERSION = '0.8.0';
+const VERSION = '0.8.1';
 const BUILD = '2026-09-17';
 
 const TYPES = [
@@ -1000,7 +997,7 @@ function startBattle(){
     B.idx[p] = 0;
     B.bond[p] = 0; B.mega[p] = 0; B.streak[p] = 0; B.hinted[p] = false;
     $('#f'+p).classList.remove('canmega');
-    $('#zone'+p+' .mhint')?.remove();
+    $('#zone'+p+' .msg').classList.remove('hintmsg');
     $('#f'+p).classList.remove('mega');
     resetFighter(p);
     setFighter(p);
@@ -1071,15 +1068,18 @@ function askMega(p){
   });
 }
 /* きずなが満タンになった最初の1回だけ 操作を教える */
+const HINT_TEXT = 'ピックを ながおしで メガシンカ！';
 function megaHint(p){
   if (B.hinted[p]) return;
   B.hinted[p] = true;
-  const h = document.createElement('div'); h.className = 'mhint';
-  h.textContent = '⚡ ピックを ながおしで メガシンカ！';
-  $('#zone'+p).append(h);
+  const msg = $('#zone'+p+' .msg'), back = msg.textContent;
+  msg.textContent = HINT_TEXT; msg.classList.add('hintmsg');
   [880, 1175].forEach((hz, i) => setTimeout(() => sfx.tone(hz, .13, 'triangle', .28), i * 120));
-  setTimeout(() => h.animate([{opacity:1},{opacity:0}], {duration:400, fill:'forwards'})
-    .finished.then(() => h.remove()).catch(() => {}), 3400);
+  setTimeout(() => {
+    // そのあいだに画面が進んでいたら さわらない
+    if (msg.textContent !== HINT_TEXT) return;
+    msg.classList.remove('hintmsg'); msg.textContent = back;
+  }, 3400);
 }
 function renderBond(p){
   const bar = $('#zone'+p+' .bond');
@@ -1168,7 +1168,7 @@ async function resolve(){
   }
   await wait(700);
   const a = B.choice[1], b = B.choice[2];
-  let win, lose;
+  let win, lose, tie = false;
   if (a === b){
     setBanner('あいこ！'); sfx.say('あいこで しょ');
     for (const p of [1,2]) $('#f'+p).animate([{transform:'translateX(0)'},{transform:'translateX(-8px)'},{transform:'translateX(8px)'},{transform:'translateX(0)'}], {duration:300, iterations:2});
@@ -1177,9 +1177,9 @@ async function resolve(){
     const s1 = megaKey(1) === 'storm', s2 = megaKey(2) === 'storm';
     if (s1 === s2){
       for (const p of [1,2]) addBond(p, BOND_GAIN.draw);
-      return endRound(true);          // だれも こうげきしていない
+      return endRound();              // だれの技も はたらいていない
     }
-    win = s1 ? 1 : 2; lose = 3 - win;
+    win = s1 ? 1 : 2; lose = 3 - win; tie = true;
   } else {
     win = BEATS[a] === b ? 1 : 2; lose = 3 - win;
   }
@@ -1207,21 +1207,26 @@ async function resolve(){
   addBond(win, BOND_GAIN.win);
   addBond(lose, BOND_GAIN.lose + bonus);
   if (bonus) boostBond(lose);
+  // メガシンカ技が じっさいに はたらいた側だけ 1回ぶん使う。
+  // じゃんけんに負けただけでは 解けない
+  const fired = [];
+  if (wk === 'crit' || wk === 'drain') fired.push(win);   // 勝ったときに はたらく技
+  if (wk === 'storm' && tie) fired.push(win);             // あいこから けずったとき
+  if (lk === 'guard') fired.push(lose);                   // まもりの かべが ふせいだとき
   if (curHp(lose) <= 0){
     await knockOut(lose);
     B.idx[lose]++; renderRoster();
     if (B.idx[lose] >= B.size) return finish(win, lose);   // 全員たおれた＝チームの負け
     await swapIn(lose);
   }
-  endRound();
+  endRound(fired);
 }
-/* ラウンドの締め。こうげきが起きたラウンドだけ メガシンカを1つ消費する。
-   あいこで何も起きなかった回に消えると、せっかく溜めたゲージが無駄になるため */
-async function endRound(noAttack){
-  if (!noAttack){
-    for (const p of [1,2]){
-      if (B.mega[p] > 0 && --B.mega[p] === 0) await megaEnd(p);
-    }
+/* ラウンドの締め。fired に入っているプレイヤーだけ メガシンカを1つ消費する。
+   何も起きなかった回や、ただ負けただけの回で消えると
+   せっかく溜めたゲージが無駄になるため */
+async function endRound(fired = []){
+  for (const p of fired){
+    if (B.mega[p] > 0 && --B.mega[p] === 0) await megaEnd(p);
   }
   newRound();          // renderBond は newRound のなかで呼ばれる
 }
