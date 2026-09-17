@@ -139,20 +139,27 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 .hand circle{fill:none;stroke:var(--sun);stroke-width:8;stroke-dasharray:301;stroke-dashoffset:301}
 .hand.holding circle{transition:stroke-dashoffset .5s linear;stroke-dashoffset:0}
 .locked{font-family:var(--display);font-size:30px;color:var(--sun);text-shadow:0 3px 0 rgba(0,0,0,.3)}
-.bond{position:relative;width:min(72%,270px);height:15px;border-radius:99px;background:rgba(0,0,0,.32);overflow:hidden;flex-shrink:0}
+.bondrow{display:flex;align-items:center;justify-content:center;gap:9px;width:min(88%,330px);flex-shrink:0}
+.bond{position:relative;flex:1;min-width:0;height:15px;border-radius:99px;background:rgba(0,0,0,.32);overflow:hidden}
+/* メガストーン型のボタン。ふだんは くすんだ石、ゲージ満タンで 虹に輝く */
+.stonebtn{position:relative;width:40px;height:40px;border-radius:50%;flex-shrink:0;touch-action:none;
+  background:radial-gradient(circle at 34% 28%,#8f9ac4,#4a5478 55%,#232a48);
+  box-shadow:0 2px 0 rgba(0,0,0,.45),inset 0 0 7px rgba(0,0,0,.45)}
+.stonebtn::after{content:'';position:absolute;inset:13%;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle at 33% 26%,rgba(255,255,255,.9),rgba(255,255,255,.06) 48%,rgba(0,0,0,.3))}
+.stonebtn svg{position:absolute;inset:-5px;width:calc(100% + 10px);height:calc(100% + 10px);
+  transform:rotate(-90deg);pointer-events:none}
+.stonebtn circle{fill:none;stroke:#fff;stroke-width:4;stroke-dasharray:126;stroke-dashoffset:126}
+.stonebtn.holding circle{transition:stroke-dashoffset .5s linear;stroke-dashoffset:0}
+.bondrow.ready .stonebtn{background:var(--rbc);animation:rbspin 2.2s linear infinite;
+  box-shadow:0 0 9px #fff,0 0 20px #c56bff,0 2px 0 rgba(0,0,0,.45)}
+.bondrow.cantmega .stonebtn{opacity:.3}
 .bond i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:linear-gradient(90deg,#f0582a,#ffb03f,#ffd23f);transition:width .45s ease}
 .bond b{position:absolute;inset:0;display:grid;place-items:center;font-size:9px;font-weight:800;color:#fff;
   text-shadow:0 1px 2px rgba(0,0,0,.95),0 0 3px rgba(0,0,0,.7);letter-spacing:.02em}
 .bond.full i,.bond.mega i{background:var(--rb);background-size:300% 100%;animation:rbflow 1.3s linear infinite}
 .bond.mega i{animation-duration:.9s}
 /* メガシンカボタン：長押しのあいだ 白いワイプが満ちる */
-.megabtn{position:relative;overflow:hidden;font-family:var(--display);font-size:15px;padding:7px 18px;border-radius:99px;
-  background:var(--rb);background-size:300% 100%;animation:rbflow 1.6s linear infinite;
-  color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.45);
-  box-shadow:0 3px 0 rgba(0,0,0,.35);touch-action:none}
-.megabtn span{position:relative;z-index:1}
-.megabtn::after{content:'';position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(255,255,255,.6)}
-.megabtn.holding::after{width:100%;transition:width .5s linear}
 /* メガシンカ中のオーラ。写真の色を変えないよう hue-rotate は使わず 影の色を順に変える */
 .fighter.mega img{animation:megaaura 1.6s linear infinite}
 @keyframes megaaura{
@@ -168,8 +175,9 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 .fighter.mega::before{content:'';position:absolute;inset:-16%;border-radius:50%;z-index:-1;
   background:var(--rbc);filter:blur(16px);opacity:.5;animation:rbspin 3.5s linear infinite}
 @media (prefers-reduced-motion:reduce){
-  .bond.full i,.bond.mega i,.megabtn,.megabadge,.fighter.mega img,.fighter.mega::before,
-  .megacut .rbrays,.megacut .rings i,.megacut .stone,.megacut .ct b,.cutin.mega .ct b{animation:none}
+  .bond.full i,.bond.mega i,.bondrow.ready .stonebtn,.megabadge,.fighter.mega img,.fighter.mega::before,
+  .megacut .rbrays,.megacut .rings i,.megacut .stone,.megacut .ct b,.cutin.mega .ct b,
+  .megaintro .stone,.megaintro .band,.megaintro .ct b,.megaintro .shock{animation:none}
   .fighter.mega img{filter:drop-shadow(0 0 12px #c56bff) drop-shadow(0 0 22px #ffd23f) drop-shadow(0 6px 0 rgba(0,0,0,.35))}
   .megacut .sparks{display:none}
 }
@@ -248,6 +256,29 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:grid;place-items:center;z-index:20;padding-inline:16px}
 .modal .box{background:#fff;color:var(--ink);border-radius:18px;padding:20px;max-width:340px;width:100%;display:flex;flex-direction:column;gap:14px;text-align:center;font-weight:800}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#fff;color:var(--ink);padding:10px 18px;border-radius:99px;font-weight:800;z-index:30}
+
+/* メガシンカ前のカットイン。メガストーンが光って 絆が高まるところを見せる */
+.megaintro{position:absolute;inset:0;z-index:13;pointer-events:none;overflow:hidden;display:grid;place-items:center;
+  background:#070a1c}
+.megaintro .band{position:absolute;left:-20%;right:-20%;top:26%;height:48%;transform:rotate(-12deg);
+  background:var(--rb);background-size:200% 100%;animation:rbflow 1s linear infinite;opacity:.9;
+  box-shadow:0 0 0 7px #fff,0 0 0 13px var(--ink)}
+.megaintro .veil{position:absolute;inset:0;background:radial-gradient(58% 44% at 50% 50%,rgba(7,10,28,.22),rgba(7,10,28,.74))}
+.megaintro .stone{position:relative;z-index:2;width:min(40vw,170px);aspect-ratio:1;border-radius:50%;
+  background:var(--rbc);animation:rbspin 1.1s linear infinite;
+  box-shadow:0 0 26px #fff,0 0 60px #c56bff,0 0 90px rgba(255,210,63,.6)}
+.megaintro .stone i{position:absolute;inset:11%;border-radius:50%;
+  background:radial-gradient(circle at 33% 26%,rgba(255,255,255,.95),rgba(255,255,255,.12) 44%,rgba(0,0,0,.4))}
+.megaintro .shock{position:absolute;z-index:1;width:22vmin;aspect-ratio:1;border-radius:50%;border:6px solid #fff;
+  opacity:0;animation:shockout .75s ease-out .3s forwards}
+@keyframes shockout{0%{transform:scale(.25);opacity:.95}100%{transform:scale(6);opacity:0}}
+.megaintro .ct{position:absolute;z-index:3;left:0;right:0;text-align:center;font-family:var(--display);color:#fff;
+  line-height:1.15;font-size:clamp(20px,6.4vw,32px);
+  text-shadow:3px 3px 0 var(--ink),-2px -2px 0 var(--ink),2px -2px 0 var(--ink),-2px 2px 0 var(--ink)}
+.megaintro .ct b{display:block;font-weight:400;font-size:clamp(24px,8vw,40px);background:var(--rb);
+  background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;
+  filter:drop-shadow(0 3px 0 rgba(0,0,0,.7));animation:rbflow 1.1s linear infinite}
+.megaintro .ct.bot{bottom:9%} .megaintro .ct.top{top:9%;transform:rotate(180deg)}
 
 /* メガシンカ発動の専用演出。すべてレインボー */
 .megacut{position:absolute;inset:0;z-index:13;pointer-events:none;overflow:hidden;display:grid;place-items:center;
@@ -381,7 +412,8 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 
 <!-- バトル -->
 <section class="screen" id="battle" hidden>
-  <div class="zone p2" id="zone2"><div class="msg"></div><div class="hands"></div><div class="bond"><i></i><b></b></div></div>
+  <div class="zone p2" id="zone2"><div class="msg"></div><div class="hands"></div><div class="bondrow"><div class="bond"><i></i><b></b></div>
+    <button class="stonebtn" aria-label="メガシンカ"><svg viewBox="0 0 46 46"><circle cx="23" cy="23" r="20"/></svg></button></div></div>
   <div class="arena" id="arena">
     <div class="fighter f2" id="f2"><div class="spin"><div class="stat"><div class="hearts"></div><div class="roster"></div></div><img alt=""><div class="throw"></div></div></div>
     <div class="banner" id="banner"></div>
@@ -389,7 +421,8 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
     <canvas id="fx"></canvas>
     <button class="quit" id="quitBtn" aria-label="やめる">✕</button>
   </div>
-  <div class="zone p1" id="zone1"><div class="msg"></div><div class="hands"></div><div class="bond"><i></i><b></b></div></div>
+  <div class="zone p1" id="zone1"><div class="msg"></div><div class="hands"></div><div class="bondrow"><div class="bond"><i></i><b></b></div>
+    <button class="stonebtn" aria-label="メガシンカ"><svg viewBox="0 0 46 46"><circle cx="23" cy="23" r="20"/></svg></button></div></div>
 </section>
 
 <script>
@@ -398,7 +431,7 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 /* 開発用のバージョン表示。index.html に手を入れたら ここも更新する。
    iPhoneのホーム画面から起動すると 古いキャッシュのままのことがあるので、
    いま端末に入っているものを ホーム下部で確認できるようにしている */
-const VERSION = '0.6.0';
+const VERSION = '0.7.0';
 const BUILD = '2026-09-17';
 
 const TYPES = [
@@ -982,9 +1015,32 @@ function renderHearts(){
     $('#f'+p+' .hearts').innerHTML = Array.from({length:MAXHP}, (_,i) => `<span class="${i < hp ? '' : 'gone'}">❤️</span>`).join('');
   }
 }
+/* メガストーンのボタンは出しっぱなしなので 配線は起動時に1回だけ */
+for (const p of [1,2]){
+  const sb = $('#zone'+p+' .stonebtn');
+  let t = null;
+  sb.addEventListener('pointerdown', ev => {
+    ev.preventDefault(); sfx.unlock();
+    if (!canMega(p)) return;                      // 満タンでなければ 何も起きない
+    sb.classList.add('holding'); sfx.tone(440,.06,'square',.26);
+    t = setTimeout(() => doMega(p), 500);
+  });
+  const cancel = () => { clearTimeout(t); sb.classList.remove('holding'); };
+  sb.addEventListener('pointerup', cancel);
+  sb.addEventListener('pointerleave', cancel);
+  sb.addEventListener('pointercancel', cancel);
+  sb.addEventListener('contextmenu', e => e.preventDefault());
+}
 function renderBond(p){
-  const bar = $('#zone'+p+' .bond'), fill = bar.querySelector('i'), lb = bar.querySelector('b');
+  const row = $('#zone'+p+' .bondrow'), bar = row.querySelector('.bond');
+  const fill = bar.querySelector('i'), lb = bar.querySelector('b');
+  const sb = row.querySelector('.stonebtn');
   const mk = megaKey(p);
+  const usable = !!cur(p)?.mega;
+  // 満タンのときだけ ストーンが虹に輝く。使ったら また くすんだ色に戻る
+  row.className = 'bondrow' + (canMega(p) ? ' ready' : '') + (usable ? '' : ' cantmega');
+  sb.classList.remove('holding');
+  sb.disabled = !usable;
   if (mk){
     bar.className = 'bond mega';
     fill.style.width = '100%';
@@ -1016,7 +1072,8 @@ function newRound(){
   B.choice = {1:null, 2:null}; B.busy = false;
   $('#banner').innerHTML = '';
   document.querySelectorAll('.throw').forEach(t => { t.style.opacity = 0; t.textContent = ''; });
-  for (const p of [1,2]) renderZone(p);
+  // busy を下ろしてから描く。canMega が busy を見るため、順番を逆にすると輝かない
+  for (const p of [1,2]){ renderZone(p); renderBond(p); }
 }
 function renderZone(p){
   const z = $('#zone'+p), hands = z.querySelector('.hands'), msg = z.querySelector('.msg');
@@ -1026,22 +1083,7 @@ function renderZone(p){
     hands.innerHTML = '<div class="locked">OK！ まってね</div>';
     return;
   }
-  if (canMega(p)){
-    // 手えらびの案内と同じ場所に出す。ゾーンの高さを増やさずに済む
-    msg.innerHTML = '<button class="megabtn"><span>⚡ メガシンカ！</span></button>';
-    const mb = msg.querySelector('.megabtn');
-    let mt = null;
-    const mstart = ev => { ev.preventDefault(); sfx.unlock(); if (!canMega(p)) return;
-      mb.classList.add('holding'); sfx.tone(440,.06,'square',.26);
-      mt = setTimeout(() => doMega(p), 500); };
-    const mcancel = () => { clearTimeout(mt); mb.classList.remove('holding'); };
-    mb.addEventListener('pointerdown', mstart);
-    mb.addEventListener('pointerup', mcancel); mb.addEventListener('pointerleave', mcancel);
-    mb.addEventListener('pointercancel', mcancel);
-    mb.addEventListener('contextmenu', e => e.preventDefault());
-  } else {
-    msg.textContent = 'ながおしで えらんでね';
-  }
+  msg.textContent = 'ながおしで えらんでね';
   for (const [k, e] of HANDS){
     const b = document.createElement('button'); b.className = 'hand'; b.setAttribute('aria-label', k);
     b.innerHTML = `${e}<svg viewBox="0 0 106 106"><circle cx="53" cy="53" r="48"/></svg>`;
@@ -1133,8 +1175,7 @@ async function endRound(noAttack){
       if (B.mega[p] > 0 && --B.mega[p] === 0) await megaEnd(p);
     }
   }
-  for (const p of [1,2]) renderBond(p);
-  newRound();
+  newRound();          // renderBond は newRound のなかで呼ばれる
 }
 let speedLines = null;
 function makeSpeedLines(){
@@ -1235,11 +1276,39 @@ async function doMega(p){
   if (!canMega(p)) return;
   B.busy = true;
   B.bond[p] = 0; B.mega[p] = MEGA_ROUNDS;
-  await megaCutIn(p);
+  for (const q of [1,2]) renderBond(q);          // ストーンを すぐ通常色に戻す
+  await megaIntro(p);                            // まず カットイン
+  await megaCutIn(p);                            // つづけて メガシンカのエフェクト
   $('#f'+p).classList.add('mega');
-  for (const q of [1,2]) renderBond(q);
   B.busy = false;
   renderZone(p);
+  for (const q of [1,2]) renderBond(q);
+}
+/* メガシンカ前のカットイン。メガストーンが光り、絆が高まったことを見せる */
+async function megaIntro(p){
+  const pk = cur(p);
+  const c = document.createElement('div'); c.className = 'megaintro';
+  c.innerHTML = `<div class="band"></div><div class="veil"></div><div class="shock"></div>`
+    + `<div class="stone"><i></i></div>`
+    + `<div class="ct ${p === 1 ? 'bot' : 'top'}">${esc(pk.name)}と<b>きずなが ひかった！</b></div>`;
+  $('#battle').append(c);
+  const stone = c.querySelector('.stone'), band = c.querySelector('.band'), label = c.querySelector('.ct');
+  sfx.tone(110, .9, 'sawtooth', .3, 440);        // 低いうなり
+  setTimeout(() => { sfx.noise(.3, 5200, .5); sfx.tone(1568, .35, 'triangle', .3); }, 330);  // キーン
+  band.animate([{transform:'rotate(-12deg) scaleY(0)'},{transform:'rotate(-12deg) scaleY(1)'}],
+    {duration:220, fill:'forwards', easing:'ease-out'});
+  stone.animate([
+    {transform:'scale(0) rotate(-90deg)', opacity:0},
+    {transform:'scale(1.25) rotate(20deg)', opacity:1, offset:.4},
+    {transform:'scale(1) rotate(0)', opacity:1}], {duration:reduce?200:760, fill:'forwards', easing:'ease-out'});
+  {
+    const base = p === 2 ? 'rotate(180deg) ' : '';
+    label.animate([{opacity:0, transform:base+'translateY(18px)'},{opacity:1, transform:base+'translateY(0)'}],
+      {duration:320, delay:300, fill:'backwards'});
+  }
+  await wait(reduce ? 300 : 1150);
+  const out = c.animate([{opacity:1},{opacity:0}], {duration:200, fill:'forwards'});
+  await out.finished; c.remove();
 }
 /* メガシンカ発動の専用演出。虹の放射光・広がる虹の輪・飛び散る虹の粒でつくる */
 async function megaCutIn(p){
