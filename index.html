@@ -438,15 +438,17 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 /* 開発用のバージョン表示。index.html に手を入れたら ここも更新する。
    iPhoneのホーム画面から起動すると 古いキャッシュのままのことがあるので、
    いま端末に入っているものを ホーム下部で確認できるようにしている */
-const VERSION = '0.8.1';
+const VERSION = '0.9.0';
 const BUILD = '2026-09-17';
 
+/* [表示名, チップの色, エフェクト種別]。エフェクト種別は 18タイプぜんぶ ちがうものにして、
+   「どのタイプの わざか」が 見ただけで わかるようにしている */
 const TYPES = [
   ['ノーマル','#9a9a7a','normal'],['ほのお','#f0582a','fire'],['みず','#3a8cf0','water'],['でんき','#e8b800','elec'],
-  ['くさ','#4cae3c','grass'],['こおり','#5cc8d8','ice'],['かくとう','#c0352b','fight'],['どく','#9a43a8','ghost'],
-  ['じめん','#c89a45','fight'],['ひこう','#8aa2f0','wind'],['エスパー','#f04e88','psy'],['むし','#8fae1f','grass'],
-  ['いわ','#b0a050','fight'],['ゴースト','#6a55a0','ghost'],['ドラゴン','#6a3cf0','wind'],['あく','#6a5040','ghost'],
-  ['はがね','#8a9ab0','fight'],['フェアリー','#e890c8','psy']
+  ['くさ','#4cae3c','grass'],['こおり','#5cc8d8','ice'],['かくとう','#c0352b','fight'],['どく','#9a43a8','poison'],
+  ['じめん','#c89a45','ground'],['ひこう','#8aa2f0','fly'],['エスパー','#f04e88','psy'],['むし','#8fae1f','bug'],
+  ['いわ','#b0a050','rock'],['ゴースト','#6a55a0','ghost'],['ドラゴン','#6a3cf0','dragon'],['あく','#6a5040','dark'],
+  ['はがね','#8a9ab0','steel'],['フェアリー','#e890c8','fairy']
 ];
 const typeInfo = n => TYPES.find(t => t[0] === n) || TYPES[0];
 const HANDS = [['gu','✊'],['choki','✌️'],['pa','✋']];
@@ -920,26 +922,80 @@ const sfx = {
 const fx = $('#fx'), fctx = fx.getContext('2d');
 let parts = [], fxRun = false;
 function sizeFx(){ const r = fx.getBoundingClientRect(), d = devicePixelRatio||1; fx.width = r.width*d; fx.height = r.height*d; fctx.setTransform(d,0,0,d,0,0); }
+/* タイプごとのエフェクト。見た目が かぶらないように
+     shape … つぶの形、em … どこから どう飛びだすか（発生パターン）、
+     rt    … 向き（spin=くるくる / aim=進む向き / up=まっすぐ）、
+     fr    … 空気ていこう、wig … ゆらゆら の大きさ、dl … つぶを ずらして出す間隔
+   の 6つを タイプごとに変えている */
 const FX = {
-  fire:  {cols:['#ff4d1c','#ff9a1c','#ffe14d'], shape:'circle', n:46, sp:5, g:-.12, life:40, size:[6,16]},
-  water: {cols:['#3a8cf0','#7cc4ff','#ffffff'], shape:'drop',   n:44, sp:7, g:.3,  life:42, size:[4,10]},
-  elec:  {cols:['#ffe14d','#fff7b0','#ffffff'], shape:'bolt',   n:14, sp:6, g:0,   life:22, size:[20,40]},
-  grass: {cols:['#4cae3c','#9be15d','#2f7d2a'], shape:'leaf',   n:30, sp:5, g:.05, life:55, size:[8,14]},
-  ice:   {cols:['#bff4ff','#5cc8d8','#ffffff'], shape:'shard',  n:32, sp:6, g:.1,  life:45, size:[6,14]},
-  fight: {cols:['#ffffff','#ffd23f','#ff5d52'], shape:'star',   n:22, sp:9, g:.2,  life:30, size:[8,18]},
-  psy:   {cols:['#ff6fb1','#ffc2e0','#c56bff'], shape:'ring',   n:7,  sp:0, g:0,   life:40, size:[10,14]},
-  ghost: {cols:['#8a6ad0','#4b2d86','#c9b3ff'], shape:'circle', n:36, sp:3, g:-.04,life:60, size:[8,20]},
-  wind:  {cols:['#e6ecff','#8aa2f0','#ffffff'], shape:'arc',    n:18, sp:8, g:0,   life:30, size:[16,30]},
-  normal:{cols:['#ffffff','#ffd23f'],           shape:'star',   n:18, sp:7, g:.15, life:30, size:[6,12]},
-  rainbow:{cols:RAINBOW,                        shape:'star',   n:46, sp:8, g:.08, life:46, size:[8,20]}
+  /* ノーマル：白と金の星が パッと はじける */
+  normal: {cols:['#ffffff','#ffd23f'],                    shape:'star',    em:'radial',   rt:'spin', n:20, sp:7,  g:.15,  life:30, size:[6,13]},
+  /* ほのお：炎が 下から 立ちのぼる */
+  fire:   {cols:['#ff4d1c','#ff9a1c','#ffe14d'],          shape:'flame',   em:'rise',     rt:'up',   n:42, sp:5,  g:-.14, life:40, size:[8,20], wig:.6},
+  /* みず：しぶきが 上に あがって 落ちてくる */
+  water:  {cols:['#3a8cf0','#7cc4ff','#ffffff'],          shape:'drop',    em:'splash',   rt:'up',   n:46, sp:8,  g:.34,  life:44, size:[4,11], fr:1},
+  /* でんき：いなずまが 四方に はしる */
+  elec:   {cols:['#ffe14d','#fff7b0','#ffffff'],          shape:'bolt',    em:'radial',   rt:'aim',  n:18, sp:6,  g:0,    life:30, size:[20,44]},
+  /* くさ：葉っぱが ひらひら 舞いおちる */
+  grass:  {cols:['#4cae3c','#9be15d','#2f7d2a'],          shape:'leaf',    em:'radial',   rt:'spin', n:30, sp:4,  g:.05,  life:58, size:[9,16], fr:.94, wig:1.4},
+  /* こおり：氷のけっしょうが 外から 突きささる */
+  ice:    {cols:['#bff4ff','#5cc8d8','#ffffff'],          shape:'crystal', em:'converge', rt:'spin', n:26, sp:7,  g:0,    life:40, size:[6,14], fr:.9},
+  /* かくとう：するどい 衝げきせんが 放射状に */
+  fight:  {cols:['#ffffff','#ffd23f','#ff5d52'],          shape:'streak',  em:'radial',   rt:'aim',  n:22, sp:12, g:.1,   life:22, size:[18,38], fr:.9},
+  /* どく：あわが ぶくぶく のぼる */
+  poison: {cols:['#9a43a8','#d06ce0','#5e2470'],          shape:'bubble',  em:'rise',     rt:'up',   n:28, sp:2.4,g:-.06, life:62, size:[6,17], wig:.9},
+  /* じめん：土くれが 地めんから 巻きあがる */
+  ground: {cols:['#c89a45','#8f6a2a','#e0c088'],          shape:'clod',    em:'ground',   rt:'spin', n:32, sp:7,  g:.42,  life:44, size:[7,17], fr:1},
+  /* ひこう：羽根が よこから 吹きぬける */
+  fly:    {cols:['#e6ecff','#8aa2f0','#ffffff'],          shape:'feather', em:'sweep',    rt:'aim',  n:24, sp:7.5,g:.03,  life:46, size:[15,28], fr:.99, wig:1.2, dl:1},
+  /* エスパー：波もんが 広がっていく */
+  psy:    {cols:['#ff6fb1','#ffc2e0','#c56bff'],          shape:'ring',    em:'center',   rt:'up',   n:7,  sp:0,  g:0,    life:40, size:[10,14], dl:5},
+  /* むし：小さな むれが ジグザグに とびまわる */
+  bug:    {cols:['#8fae1f','#c8e05a','#4f6a10'],          shape:'dot',     em:'swarm',    rt:'up',   n:46, sp:4,  g:0,    life:48, size:[3,7],  fr:.99, wig:2.6},
+  /* いわ：大きな岩が 重く とびちる */
+  rock:   {cols:['#b0a050','#8a7a3a','#d8ca88'],          shape:'rock',    em:'radial',   rt:'spin', n:22, sp:8,  g:.5,   life:46, size:[10,23], fr:1},
+  /* ゴースト：ひとだまが ふわふわ ただよう */
+  ghost:  {cols:['#8a6ad0','#4b2d86','#c9b3ff'],          shape:'wisp',    em:'rise',     rt:'up',   n:30, sp:2.6,g:-.05, life:64, size:[10,24], wig:1.8},
+  /* ドラゴン：三日月が うずを まいて 広がる */
+  dragon: {cols:['#6a3cf0','#a884ff','#2a1070'],          shape:'crescent',em:'spiral',   rt:'aim',  n:32, sp:6,  g:0,    life:46, size:[12,28], fr:.97, dl:1},
+  /* あく：つめあとが 十字に はしる */
+  dark:   {cols:['#c8a070','#f0dcc0','#8a6a50'],          shape:'slash',   em:'cross',    rt:'aim',  n:14, sp:9,  g:0,    life:26, size:[34,64], fr:.93, dl:2},
+  /* はがね：金ぞくの きらめきが はじける */
+  steel:  {cols:['#8a9ab0','#e8f0ff','#ffffff'],          shape:'glint',   em:'radial',   rt:'spin', n:28, sp:9,  g:.3,   life:30, size:[8,19], fr:.93},
+  /* フェアリー：ハートが ゆらゆら 浮かぶ */
+  fairy:  {cols:['#e890c8','#ffd7ee','#ffffff'],          shape:'heart',   em:'float',    rt:'up',   n:30, sp:3,  g:-.04, life:56, size:[8,17], wig:1.1},
+  /* メガシンカ：レインボーの星（タイプに関係なく これ） */
+  rainbow:{cols:RAINBOW,                                  shape:'star',    em:'radial',   rt:'spin', n:46, sp:8,  g:.08,  life:46, size:[8,20]}
+};
+const TAU = Math.PI * 2;
+/* 発生パターン。中心(0,0)からの ずれ(ox,oy)と はじめの速さ(vx,vy)を返す */
+const EM = {
+  radial:   (i,n,f) => { const a = Math.random()*TAU, v = (.3+Math.random())*f.sp; return {ox:0, oy:0, vx:Math.cos(a)*v, vy:Math.sin(a)*v}; },
+  rise:     (i,n,f) => ({ox:(Math.random()-.5)*96, oy:24+Math.random()*26, vx:(Math.random()-.5)*1.4, vy:-(.4+Math.random())*f.sp}),
+  splash:   (i,n,f) => { const a = -Math.PI/2 + (Math.random()-.5)*2.3, v = (.5+Math.random()*.7)*f.sp; return {ox:(Math.random()-.5)*36, oy:8, vx:Math.cos(a)*v, vy:Math.sin(a)*v}; },
+  converge: (i,n,f) => { const a = i/n*TAU + Math.random()*.4, R = 110+Math.random()*60; return {ox:Math.cos(a)*R, oy:Math.sin(a)*R, vx:-Math.cos(a)*f.sp, vy:-Math.sin(a)*f.sp}; },
+  ground:   (i,n,f) => ({ox:(Math.random()-.5)*160, oy:48, vx:(Math.random()-.5)*4, vy:-(.6+Math.random())*f.sp}),
+  sweep:    (i,n,f) => { const d = i%2 ? 1 : -1; return {ox:-d*(100+Math.random()*90), oy:(Math.random()-.5)*120, vx:d*(.6+Math.random()*.7)*f.sp, vy:(Math.random()-.5)*1.4}; },
+  center:   () => ({ox:0, oy:0, vx:0, vy:0}),
+  swarm:    (i,n,f) => { const a = Math.random()*TAU, v = (.4+Math.random())*f.sp; return {ox:(Math.random()-.5)*44, oy:(Math.random()-.5)*44, vx:Math.cos(a)*v, vy:Math.sin(a)*v}; },
+  spiral:   (i,n,f) => { const a = i/n*TAU*3, v = (.45+i/n*.9)*f.sp; return {ox:0, oy:0, vx:Math.cos(a)*v, vy:Math.sin(a)*v}; },
+  cross:    (i,n,f) => { const d = i%2 ? .72 : -.72, s2 = i%4 < 2 ? 1 : -1, v = (.5+Math.random()*.7)*f.sp,
+                         cx = Math.cos(d)*s2, cy = Math.sin(d)*s2;
+                         return {ox:-cx*70, oy:-cy*70, vx:cx*v, vy:cy*v}; },
+  float:    (i,n,f) => ({ox:(Math.random()-.5)*120, oy:(Math.random()-.5)*70, vx:(Math.random()-.5)*1.6, vy:-(.3+Math.random()*.7)*f.sp}),
 };
 function burst(kind, x, y, scale=1){
   const f = FX[kind] || FX.normal;
-  const n = Math.round(f.n * scale);
+  const n = Math.round(f.n * scale), em = EM[f.em] || EM.radial;
   for (let i=0;i<n;i++){
-    const a = Math.random()*Math.PI*2, v = (0.3 + Math.random()) * f.sp * scale;
-    parts.push({x, y, vx:Math.cos(a)*v, vy:Math.sin(a)*v, g:f.g, life:f.life*(.7+Math.random()*.6), age:0,
-      col:f.cols[i % f.cols.length], shape:f.shape, size:f.size[0] + Math.random()*(f.size[1]-f.size[0]), rot:Math.random()*6, vr:(Math.random()-.5)*.3, delay: f.shape==='ring' ? i*5 : 0});
+    const e = em(i, n, f);
+    const vx = e.vx*scale, vy = e.vy*scale;
+    // aim=進む向きを向く / up=まわらない / spin=くるくるまわる
+    const rot = f.rt === 'aim' ? Math.atan2(vy, vx) : f.rt === 'up' ? 0 : Math.random()*TAU;
+    parts.push({x:x + e.ox*scale, y:y + e.oy*scale, vx, vy, g:f.g, fr:f.fr ?? .97,
+      life:f.life*(.7+Math.random()*.6), age:0, wig:(f.wig||0)*scale, ph:Math.random()*TAU,
+      col:f.cols[i % f.cols.length], shape:f.shape, size:(f.size[0] + Math.random()*(f.size[1]-f.size[0]))*scale,
+      rot, vr:f.rt === 'spin' ? (Math.random()-.5)*.3 : 0, delay:(f.dl||0)*i});
   }
   if (!fxRun){ fxRun = true; requestAnimationFrame(tick); }
 }
@@ -950,19 +1006,57 @@ function tick(){
   for (const p of parts){
     p.age++; if (p.age < p.delay) continue;
     const t = (p.age - p.delay) / p.life;
-    p.x += p.vx; p.y += p.vy; p.vy += p.g; p.vx *= .97; p.rot += p.vr;
+    // 空気ていこうは たて・よこ 両方にかける（よこだけだと 放射状のはずが たて長に なる）
+    p.x += p.vx; p.y += p.vy; p.vx *= p.fr; p.vy = p.vy * p.fr + p.g; p.rot += p.vr;
+    if (p.wig) p.x += Math.sin(p.age*.2 + p.ph) * p.wig;   // ひらひら / ジグザグ
     fctx.save(); fctx.globalAlpha = Math.max(0, 1 - t); fctx.translate(p.x, p.y); fctx.rotate(p.rot);
     fctx.fillStyle = p.col; fctx.strokeStyle = p.col;
     const s = p.size;
     switch(p.shape){
-      case 'circle': fctx.beginPath(); fctx.arc(0,0,s*(1-t*.5),0,7); fctx.fill(); break;
-      case 'drop': fctx.beginPath(); fctx.ellipse(0,0,s*.6,s,0,0,7); fctx.fill(); break;
-      case 'leaf': fctx.beginPath(); fctx.ellipse(0,0,s,s*.45,0,0,7); fctx.fill(); break;
-      case 'shard': fctx.beginPath(); fctx.moveTo(0,-s); fctx.lineTo(s*.4,0); fctx.lineTo(0,s); fctx.lineTo(-s*.4,0); fctx.fill(); break;
+      // ノーマル：とがった星
       case 'star': fctx.beginPath(); for (let i=0;i<10;i++){ const rr = i%2 ? s*.45 : s; fctx.lineTo(Math.cos(i*Math.PI/5)*rr, Math.sin(i*Math.PI/5)*rr); } fctx.fill(); break;
-      case 'bolt': fctx.lineWidth = 4; fctx.beginPath(); fctx.moveTo(0,0); for (let i=1;i<5;i++) fctx.lineTo((Math.random()-.5)*s*.8, i*s*.5); fctx.stroke(); break;
-      case 'ring': fctx.rotate(-p.rot); fctx.lineWidth = 5; fctx.beginPath(); fctx.arc(0,0,s + t*110,0,7); fctx.stroke(); break;
-      case 'arc': fctx.lineWidth = 4; fctx.beginPath(); fctx.arc(0,0,s,0,2.2); fctx.stroke(); break;
+      // ほのお：ゆらぐ炎（ちいさくなりながら 消える）
+      case 'flame': { const h = s*(1-t*.4); fctx.beginPath(); fctx.moveTo(0,-h); fctx.quadraticCurveTo(h*.66,-h*.1,0,h*.55); fctx.quadraticCurveTo(-h*.66,-h*.1,0,-h); fctx.fill(); break; }
+      // みず：しずく
+      case 'drop': fctx.beginPath(); fctx.moveTo(0,-s); fctx.bezierCurveTo(s*.72,-s*.2,s*.52,s,0,s); fctx.bezierCurveTo(-s*.52,s,-s*.72,-s*.2,0,-s); fctx.fill(); break;
+      // でんき：ギザギザの いなずま（毎フレーム 形がかわって バチバチする）
+      case 'bolt': fctx.lineWidth = 4; fctx.beginPath(); fctx.moveTo(0,0); for (let i=1;i<5;i++) fctx.lineTo(i*s*.25, (Math.random()-.5)*s*.4); fctx.stroke(); break;
+      // くさ：先のとがった葉
+      case 'leaf': fctx.beginPath(); fctx.moveTo(-s,0); fctx.quadraticCurveTo(0,-s*.62,s,0); fctx.quadraticCurveTo(0,s*.62,-s,0); fctx.fill(); break;
+      // こおり：六角のけっしょう
+      case 'crystal': { fctx.beginPath(); for (let i=0;i<6;i++){ const a = i*Math.PI/3; fctx.lineTo(Math.cos(a)*s*.7, Math.sin(a)*s*.7); } fctx.closePath(); fctx.fill();
+        fctx.lineWidth = 2; fctx.beginPath(); for (let i=0;i<3;i++){ const a = i*Math.PI/3, dx = Math.cos(a)*s*1.4, dy = Math.sin(a)*s*1.4; fctx.moveTo(-dx,-dy); fctx.lineTo(dx,dy); } fctx.stroke(); break; }
+      // かくとう：するどい 衝げきせん
+      case 'streak': fctx.beginPath(); fctx.moveTo(s*.6,0); fctx.lineTo(-s*.6,-s*.16); fctx.lineTo(-s*.6,s*.16); fctx.closePath(); fctx.fill(); break;
+      // どく：ぶくぶく の あわ
+      case 'bubble': { const r2 = s*.8; fctx.globalAlpha *= .45; fctx.beginPath(); fctx.arc(0,0,r2,0,TAU); fctx.fill();
+        fctx.globalAlpha /= .45; fctx.lineWidth = Math.max(2,s*.2); fctx.beginPath(); fctx.arc(0,0,r2,0,TAU); fctx.stroke(); break; }
+      // じめん：でこぼこの 土くれ
+      case 'clod': { fctx.beginPath(); for (let i=0;i<5;i++){ const a = i/5*TAU, rr = s*(.6+(Math.sin(i*9.7+p.ph)+1)*.25); fctx.lineTo(Math.cos(a)*rr, Math.sin(a)*rr); } fctx.closePath(); fctx.fill(); break; }
+      // ひこう：ほそい 羽根（しんが 1本 はいる）
+      case 'feather': fctx.beginPath(); fctx.moveTo(-s*.55,0); fctx.quadraticCurveTo(-s*.1,-s*.44,s*.55,0); fctx.quadraticCurveTo(-s*.1,s*.2,-s*.55,0); fctx.fill();
+        fctx.lineWidth = 1.5; fctx.strokeStyle = 'rgba(255,255,255,.75)'; fctx.beginPath(); fctx.moveTo(-s*.55,0); fctx.lineTo(s*.55,0); fctx.stroke(); break;
+      // エスパー：広がる 波もん
+      case 'ring': fctx.rotate(-p.rot); fctx.lineWidth = 5; fctx.beginPath(); fctx.arc(0,0,s + t*110,0,TAU); fctx.stroke(); break;
+      // むし：小さな つぶ＋みじかい 尾
+      case 'dot': fctx.beginPath(); fctx.arc(0,0,s,0,TAU); fctx.fill();
+        fctx.lineWidth = 1.5; fctx.beginPath(); fctx.moveTo(0,0); fctx.lineTo(-p.vx*2.5,-p.vy*2.5); fctx.stroke(); break;
+      // いわ：ごつごつした 岩
+      case 'rock': { fctx.beginPath(); for (let i=0;i<6;i++){ const a = i/6*TAU, rr = s*(.65+(Math.cos(i*5.3+p.ph)+1)*.22); fctx.lineTo(Math.cos(a)*rr, Math.sin(a)*rr); } fctx.closePath(); fctx.fill();
+        fctx.lineWidth = 2; fctx.strokeStyle = 'rgba(0,0,0,.35)'; fctx.stroke(); break; }
+      // ゴースト：しっぽの ある ひとだま
+      case 'wisp': fctx.globalAlpha *= .8; fctx.beginPath(); fctx.arc(0,-s*.3,s*.52,Math.PI,0);
+        fctx.quadraticCurveTo(s*.5,s*.5,0,s); fctx.quadraticCurveTo(-s*.5,s*.5,-s*.52,-s*.3); fctx.closePath(); fctx.fill(); break;
+      // ドラゴン：三日月の きりさき
+      case 'crescent': fctx.lineWidth = Math.max(3,s*.28); fctx.beginPath(); fctx.arc(0,0,s*.8,-1.1,1.1); fctx.stroke(); break;
+      // あく：つめあとの ような きりさき
+      case 'slash': fctx.beginPath(); fctx.moveTo(-s*.5,0); fctx.quadraticCurveTo(0,-s*.26,s*.5,0); fctx.quadraticCurveTo(0,-s*.02,-s*.5,0); fctx.fill(); break;
+      // はがね：四ほう に のびる きらめき
+      case 'glint': fctx.beginPath(); for (let i=0;i<8;i++){ const rr = i%2 ? s*.16 : s; fctx.lineTo(Math.cos(i*Math.PI/4)*rr, Math.sin(i*Math.PI/4)*rr); } fctx.fill(); break;
+      // フェアリー：ハート
+      case 'heart': fctx.beginPath(); fctx.moveTo(0,s*.75); fctx.bezierCurveTo(-s*1.1,-s*.1,-s*.46,-s*.95,0,-s*.34);
+        fctx.bezierCurveTo(s*.46,-s*.95,s*1.1,-s*.1,0,s*.75); fctx.fill(); break;
+      default: fctx.beginPath(); fctx.arc(0,0,s*(1-t*.5),0,TAU); fctx.fill();
     }
     fctx.restore();
   }
@@ -1004,6 +1098,7 @@ function startBattle(){
   }
   $('.result')?.remove();
   show('battle');
+  parts = [];                       // 前のバトルの つぶを 持ちこさない
   requestAnimationFrame(sizeFx);
   renderHearts(); renderRoster(); renderBond(1); renderBond(2);
   newRound();
@@ -1420,9 +1515,14 @@ async function knockOut(l){
   setBanner(B.size > 1 ? `${sideName(l)}の ${ORD[B.idx[l]]} ダウン！` : 'やったー！');
   sfx.tone(300, .8, 'sawtooth', .2, 60);
   burst(typeInfo(cur(3 - l).type)[2], cd.x, cd.y, 1.6);
-  await D.animate([{transform:'translate(0,0) rotate(0) scale(1)', opacity:1},
+  const ko = D.animate([{transform:'translate(0,0) rotate(0) scale(1)', opacity:1},
     {transform:`translate(${l===1?160:-160}px, ${l===1?220:-220}px) rotate(${l===1?720:-720}deg) scale(.3)`, opacity:0}],
-    {duration:reduce?10:1100, easing:'ease-in', fill:'forwards'}).finished;
+    {duration:reduce?10:1100, easing:'ease-in', fill:'forwards'});
+  await ko.finished;
+  // 終わった姿を インラインに 書きうつしてから アニメを 片づける。
+  // fill:'forwards' のまま 置いておくと、ブラウザが その アニメを 勝手に 取りのぞいたあとも
+  // 見た目だけ 透明のまま 残ることがあり、「もういっかい」で ピックが 出てこなくなる
+  ko.commitStyles(); ko.cancel();
 }
 /* つぎのピックが 自分がわから 登場する。ハートは 3つで 仕切りなおし */
 async function swapIn(p){
