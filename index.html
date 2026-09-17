@@ -115,6 +115,7 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
   background:var(--ground2);opacity:.45;text-align:left;line-height:1.25}
 .megas button.on{opacity:1;box-shadow:0 0 0 3px #fff}
 .megas button small{display:block;font-size:11px;font-weight:500;margin-top:2px}
+.megadesc{font-size:10px;color:var(--muted);line-height:1.25;text-align:center}
 .megabadge{font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px;color:#fff;line-height:1.3;
   background:var(--rb);background-size:300% 100%;animation:rbflow 3.4s linear infinite;
   text-shadow:0 1px 2px rgba(0,0,0,.55)}
@@ -373,6 +374,8 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
   <div class="field">タイプ（わざの エフェクトが かわる）<div class="types" id="typeBox"></div></div>
   <label class="field" for="moveIn">わざの なまえ<input type="text" id="moveIn" maxlength="14" placeholder="れい：ばくれつパンチ"></label>
   <div class="field">メガシンカ（できる ピックだけ えらぶ）<div class="megas" id="megaBox"></div></div>
+  <label class="field" for="megaMoveIn" id="megaMoveField" hidden>メガシンカの わざの なまえ
+    <input type="text" id="megaMoveIn" maxlength="14"></label>
   <button class="btn" id="saveBtn">とうろくする</button>
 </section>
 
@@ -395,7 +398,7 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 /* 開発用のバージョン表示。index.html に手を入れたら ここも更新する。
    iPhoneのホーム画面から起動すると 古いキャッシュのままのことがあるので、
    いま端末に入っているものを ホーム下部で確認できるようにしている */
-const VERSION = '0.5.0';
+const VERSION = '0.5.1';
 const BUILD = '2026-09-17';
 
 const TYPES = [
@@ -416,6 +419,8 @@ const MEGA = [
   ['storm', 'あらしの ちから',     'あいこでも あいてを 1つ けずる',       '#23b8e8'],
 ];
 const megaInfo = k => MEGA.find(m => m[0] === k) || null;
+/* メガシンカ技の名前。登録していなければ そのパターンの既定名を使う */
+const megaMoveOf = pk => pk?.megaMove || megaInfo(pk?.mega)?.[1] || '';
 const RAINBOW = ['#ff3b30','#ff9500','#ffd23f','#3ddc97','#23b8e8','#5b6bff','#c56bff'];
 const MEGA_ROUNDS = 3;          // メガシンカが つづく ラウンドすう
 const BOND_MAX = 100;           // きずなゲージ
@@ -473,7 +478,7 @@ const store = {
 };
 
 /* サンプルピック（公式画像は使わず、図形で作る） */
-function samplePick(name, type, move, orient, symbol, mega){
+function samplePick(name, type, move, orient, symbol, mega, megaMove){
   const W = orient === 'h' ? 486 : 300, H = orient === 'h' ? 300 : 486;
   const c = document.createElement('canvas'); c.width = W; c.height = H;
   const x = c.getContext('2d'), col = typeInfo(type)[1];
@@ -485,14 +490,14 @@ function samplePick(name, type, move, orient, symbol, mega){
   x.fillText(symbol, W/2, H/2);
   x.fillStyle = '#fff'; x.font = `800 ${Math.min(W,H)*0.09}px sans-serif`;
   x.fillText('SAMPLE', W/2, H - 40);
-  return {id:'s-'+name, name, type, move, orient, mega, img:c.toDataURL('image/png'), created:Date.now() + (orient==='v'?1:0), sample:true};
+  return {id:'s-'+name, name, type, move, orient, mega, megaMove, img:c.toDataURL('image/png'), created:Date.now() + (orient==='v'?1:0), sample:true};
 }
 let picks = [];
 async function loadPicks(){
   picks = await store.all();
   if (!picks.length){
-    const a = samplePick('サンプル ほのお','ほのお','ファイアタックル','h','🔥','crit');
-    const b = samplePick('サンプル でんき','でんき','かみなりキック','v','⚡','guard');
+    const a = samplePick('サンプル ほのお','ほのお','ファイアタックル','h','🔥','crit','レインボーバースト');
+    const b = samplePick('サンプル でんき','でんき','かみなりキック','v','⚡','guard','にじいろバリア');
     await store.put(a); await store.put(b);
     picks = [a, b];
   }
@@ -624,7 +629,7 @@ function renderDex(){
     const c = document.createElement('div'); c.className = 'card edit';
     const mi = megaInfo(pk.mega);
     c.innerHTML = `<img src="${pk.img}" alt=""><div class="nm">${esc(pk.name)}</div>${chipHTML(pk.type)}<div style="font-size:12px">${esc(pk.move)}</div>`
-      + (mi ? `<div class="megabadge">⚡${esc(mi[1])}</div>` : '')
+      + (mi ? `<div class="megabadge">⚡${esc(megaMoveOf(pk))}</div><div class="megadesc">${esc(mi[2])}</div>` : '')
       + `<div class="editic" aria-hidden="true">✏️</div><button class="del" aria-label="けす">✕</button>`;
     c.onclick = () => openEditor(pk);          // カードをタップして なおす
     c.querySelector('.del').onclick = e => {
@@ -659,12 +664,19 @@ const megaBox = $('#megaBox');
   b.onclick = () => { ed.mega = k; syncMegas(); };
   megaBox.append(b);
 });
-function syncMegas(){ [...megaBox.children].forEach(b => b.classList.toggle('on', (b.dataset.mega || null) === ed.mega)); }
+function syncMegas(){
+  [...megaBox.children].forEach(b => b.classList.toggle('on', (b.dataset.mega || null) === ed.mega));
+  // メガシンカ技を えらんだときだけ 名前の欄を出す。空のままなら 既定名を使う
+  const mi = megaInfo(ed.mega);
+  $('#megaMoveField').hidden = !mi;
+  if (mi) $('#megaMoveIn').placeholder = `れい：${mi[1]}`;
+}
 /* pk を渡すと そのピックを なおすモードになる */
 function openEditor(pk){
   editingId = pk ? pk.id : null;
   Object.assign(ed, {img:null, fromExisting:false, orient: pk?.orient || 'h', tx:0, ty:0, s:1, rot:0, fine:0,
     type: pk?.type || 'ノーマル', mega: pk?.mega || null});
+  $('#megaMoveIn').value = pk?.megaMove || '';
   $('#nameIn').value = pk?.name || '';
   $('#moveIn').value = pk?.move || '';
   $('#rotRange').value = 0;
@@ -811,8 +823,10 @@ $('#saveBtn').onclick = async () => {
   o.beginPath(); pickPath(o, fx, fy, fw, fh, ed.orient); o.clip();
   o.imageSmoothingQuality = 'high';
   drawImg(o, W, H);
+  // メガシンカ技の名前。未入力なら null にして 既定名で表示する
+  const megaMove = ed.mega ? ($('#megaMoveIn').value.trim() || null) : null;
   const pk = {id: old ? old.id : 'p-'+Date.now(), name, type:ed.type, move, orient:ed.orient,
-    mega:ed.mega, img:out.toDataURL('image/png'), created: old ? old.created : Date.now()};
+    mega:ed.mega, megaMove, img:out.toDataURL('image/png'), created: old ? old.created : Date.now()};
   if (old?.sample) pk.sample = true;
   await store.put(pk);
   if (old) picks[picks.indexOf(old)] = pk; else picks.push(pk);
@@ -1126,7 +1140,7 @@ async function cutIn(w, pk, mi){
   c.className = 'cutin' + (mi ? ' mega' : '');
   c.style.setProperty('--c', mi ? mi[3] : t[1]);
   c.style.setProperty('--c2', mi ? '#2a1050' : '#1d2340'); c.style.setProperty('--lines', speedLines);
-  const txt = `${esc(pk.name)}の<b>${esc(mi ? mi[1] : pk.move)}！</b>`;
+  const txt = `${esc(pk.name)}の<b>${esc(mi ? megaMoveOf(pk) : pk.move)}！</b>`;
   c.innerHTML = `<div class="dim"></div><div class="flash"></div><div class="band"></div><img class="ori-${pk.orient || 'h'}" src="${pk.img}" alt=""><div class="ct ${w === 1 ? 'bot' : 'top'}">${txt}</div>`;
   $('#battle').append(c);
   const [, flash, band, img, label] = c.children;
@@ -1156,7 +1170,7 @@ async function attack(w, l){
   const pk = cur(w);
   const mi = megaInfo(megaKey(w));                 // メガシンカ中なら メガ技を使う
   const kind = mi ? 'rainbow' : typeInfo(pk.type)[2];
-  const moveName = mi ? mi[1] : pk.move;
+  const moveName = mi ? megaMoveOf(pk) : pk.move;
   const A = $('#f'+w), D = $('#f'+l);
   const ca = center(A), cd = center(D), dy = (cd.y - ca.y) * 0.72;
   // 技名は こうげきした がわ だけに 見える向きで出す
