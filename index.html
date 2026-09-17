@@ -141,20 +141,31 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 .locked{font-family:var(--display);font-size:30px;color:var(--sun);text-shadow:0 3px 0 rgba(0,0,0,.3)}
 .bond{position:relative;width:min(88%,330px);height:15px;border-radius:99px;background:rgba(0,0,0,.32);
   overflow:hidden;flex-shrink:0}
-/* メガストーン型のボタン。ピックの隣に置き、fighter の外なので 攻撃アニメで動かない */
-.frow{display:flex;align-items:center;justify-content:center;gap:10px}
-.stonebtn{position:relative;width:min(17vw,66px);aspect-ratio:1;border-radius:50%;flex-shrink:0;touch-action:none;
-  background:radial-gradient(circle at 34% 28%,#8f9ac4,#4a5478 55%,#232a48);
-  box-shadow:0 3px 0 rgba(0,0,0,.45),inset 0 0 10px rgba(0,0,0,.45)}
-.stonebtn::after{content:'';position:absolute;inset:13%;border-radius:50%;pointer-events:none;
-  background:radial-gradient(circle at 33% 26%,rgba(255,255,255,.9),rgba(255,255,255,.06) 48%,rgba(0,0,0,.3))}
-.stonebtn svg{position:absolute;inset:-6px;width:calc(100% + 12px);height:calc(100% + 12px);
-  transform:rotate(-90deg);pointer-events:none}
-.stonebtn circle{fill:none;stroke:#fff;stroke-width:5;stroke-dasharray:208;stroke-dashoffset:208}
-.stonebtn.holding circle{transition:stroke-dashoffset .5s linear;stroke-dashoffset:0}
-.stonebtn.ready{background:var(--rbc);animation:rbspin 2.2s linear infinite;
-  box-shadow:0 0 12px #fff,0 0 26px #c56bff,0 3px 0 rgba(0,0,0,.45)}
-.stonebtn.cantmega{opacity:.28}
+/* メガシンカできるとき ピック自体が虹に脈打つ。長押しすると 光って確認が出る */
+.fighter{touch-action:none}
+.fighter.canmega img{animation:megaready 1.3s ease-in-out infinite}
+@keyframes megaready{
+  0%,100%{filter:drop-shadow(0 6px 0 rgba(0,0,0,.35))}
+  50%{filter:drop-shadow(0 0 13px #c56bff) drop-shadow(0 0 24px #ffd23f) drop-shadow(0 6px 0 rgba(0,0,0,.35))}
+}
+.fighter.holding img{animation:none;transition:filter .3s,transform .3s;transform:scale(.94);
+  filter:brightness(1.5) drop-shadow(0 0 18px #fff) drop-shadow(0 6px 0 rgba(0,0,0,.35))}
+/* メガシンカするか聞く。その子から読める向きで出す */
+.megaask{position:absolute;inset:0;z-index:16;display:grid;place-items:center;background:rgba(6,8,26,.84)}
+.megaask .box{background:var(--ground2);border-radius:22px;padding:18px 16px;display:flex;flex-direction:column;
+  align-items:center;gap:11px;width:min(80%,300px);box-shadow:0 0 0 4px rgba(255,255,255,.18);
+  --L:min(42vw,17vh,170px)}
+.megaask.flip .box{transform:rotate(180deg)}
+.megaask .ttl{font-family:var(--display);font-size:clamp(18px,5.6vw,23px);background:var(--rb);
+  background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:rbflow 1.4s linear infinite}
+.megaask img{object-fit:contain;filter:drop-shadow(0 0 12px #c56bff)}
+.megaask .nm{font-weight:800;font-size:13px;text-align:center}
+/* きずなが満タンになった1回だけ 出る操作の案内 */
+.mhint{position:absolute;left:50%;top:3px;transform:translateX(-50%);z-index:4;white-space:nowrap;
+  background:var(--rb);background-size:200% 100%;animation:rbflow 1.6s linear infinite;
+  color:#fff;font-weight:800;font-size:12px;padding:5px 13px;border-radius:99px;
+  text-shadow:0 1px 2px rgba(0,0,0,.65);box-shadow:0 2px 0 rgba(0,0,0,.35)}
 .bond i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:linear-gradient(90deg,#f0582a,#ffb03f,#ffd23f);transition:width .45s ease}
 .bond b{position:absolute;inset:0;display:grid;place-items:center;font-size:9px;font-weight:800;color:#fff;
   text-shadow:0 1px 2px rgba(0,0,0,.95),0 0 3px rgba(0,0,0,.7);letter-spacing:.02em}
@@ -176,7 +187,7 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 .fighter.mega::before{content:'';position:absolute;inset:-16%;border-radius:50%;z-index:-1;
   background:var(--rbc);filter:blur(16px);opacity:.5;animation:rbspin 3.5s linear infinite}
 @media (prefers-reduced-motion:reduce){
-  .bond.full i,.bond.mega i,.stonebtn.ready,.megabadge,.fighter.mega img,.fighter.mega::before,
+  .bond.full i,.bond.mega i,.fighter.canmega img,.mhint,.megaask .ttl,.megabadge,.fighter.mega img,.fighter.mega::before,
   .megacut .rbrays,.megacut .rings i,.megacut .stone,.megacut .ct b,.cutin.mega .ct b,
   .megaintro .stone,.megaintro .band,.megaintro .ct b,.megaintro .shock{animation:none}
   .fighter.mega img{filter:drop-shadow(0 0 12px #c56bff) drop-shadow(0 0 22px #ffd23f) drop-shadow(0 6px 0 rgba(0,0,0,.35))}
@@ -184,7 +195,7 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 }
 .arena{position:relative;display:grid;grid-template-rows:1fr auto 1fr;align-items:center;justify-items:center;padding:6px 12px}
 .fighter{position:relative;display:flex;align-items:center;gap:10px;will-change:transform;z-index:2}
-.fighter .spin{display:flex;align-items:center;gap:10px}
+.fighter .spin{display:grid;grid-template-columns:56px auto 56px;align-items:center;justify-items:center;gap:10px}
 .f2 .spin{transform:rotate(180deg)}
 .fighter{--L:min(46vw,21vh,190px)}
 .cutin{--L:min(80vw,36vh,340px)}
@@ -415,15 +426,9 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 <section class="screen" id="battle" hidden>
   <div class="zone p2" id="zone2"><div class="msg"></div><div class="hands"></div><div class="bond"><i></i><b></b></div></div>
   <div class="arena" id="arena">
-    <div class="frow">
-      <div class="fighter f2" id="f2"><div class="spin"><div class="stat"><div class="hearts"></div><div class="roster"></div></div><img alt=""><div class="throw"></div></div></div>
-      <button class="stonebtn s2" aria-label="メガシンカ"><svg viewBox="0 0 74 74"><circle cx="37" cy="37" r="33"/></svg></button>
-    </div>
+    <div class="fighter f2" id="f2"><div class="spin"><div class="stat"><div class="hearts"></div><div class="roster"></div></div><img alt=""><div class="throw"></div></div></div>
     <div class="banner" id="banner"></div>
-    <div class="frow">
-      <button class="stonebtn s1" aria-label="メガシンカ"><svg viewBox="0 0 74 74"><circle cx="37" cy="37" r="33"/></svg></button>
-      <div class="fighter f1" id="f1"><div class="spin"><div class="throw"></div><img alt=""><div class="stat"><div class="hearts"></div><div class="roster"></div></div></div></div>
-    </div>
+    <div class="fighter f1" id="f1"><div class="spin"><div class="throw"></div><img alt=""><div class="stat"><div class="hearts"></div><div class="roster"></div></div></div></div>
     <canvas id="fx"></canvas>
     <button class="quit" id="quitBtn" aria-label="やめる">✕</button>
   </div>
@@ -436,7 +441,7 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 /* 開発用のバージョン表示。index.html に手を入れたら ここも更新する。
    iPhoneのホーム画面から起動すると 古いキャッシュのままのことがあるので、
    いま端末に入っているものを ホーム下部で確認できるようにしている */
-const VERSION = '0.7.1';
+const VERSION = '0.8.0';
 const BUILD = '2026-09-17';
 
 const TYPES = [
@@ -971,6 +976,7 @@ function tick(){
 /* size 人ずつの勝ち抜き戦。team/hp は出場順の配列、idx が今たたかっているピック */
 const B = {size:1, team:{1:[],2:[]}, hp:{1:[],2:[]}, idx:{1:0,2:0},
   bond:{1:0,2:0}, mega:{1:0,2:0},                               // きずな / メガシンカの のこり回数
+  hinted:{1:false,2:false},                                     // 操作の案内を出したか
   streak:{1:0,2:0},                                            // 連敗数
   choice:{1:null,2:null}, busy:false, over:false};
 const cur = p => B.team[p][B.idx[p]];
@@ -992,7 +998,9 @@ function startBattle(){
     B.team[p] = team[p].map(id => picks.find(x => x.id === id));
     B.hp[p] = B.team[p].map(() => MAXHP);
     B.idx[p] = 0;
-    B.bond[p] = 0; B.mega[p] = 0; B.streak[p] = 0;
+    B.bond[p] = 0; B.mega[p] = 0; B.streak[p] = 0; B.hinted[p] = false;
+    $('#f'+p).classList.remove('canmega');
+    $('#zone'+p+' .mhint')?.remove();
     $('#f'+p).classList.remove('mega');
     resetFighter(p);
     setFighter(p);
@@ -1020,31 +1028,67 @@ function renderHearts(){
     $('#f'+p+' .hearts').innerHTML = Array.from({length:MAXHP}, (_,i) => `<span class="${i < hp ? '' : 'gone'}">❤️</span>`).join('');
   }
 }
-/* メガストーンのボタンは出しっぱなしなので 配線は起動時に1回だけ */
+/* ピックの長押しでメガシンカ。ピックは出しっぱなしなので 配線は起動時に1回だけ */
 for (const p of [1,2]){
-  const sb = $('#arena .stonebtn.s'+p);
+  const f = $('#f'+p);
   let t = null;
-  sb.addEventListener('pointerdown', ev => {
+  const cancel = () => { clearTimeout(t); f.classList.remove('holding'); };
+  f.addEventListener('pointerdown', ev => {
     ev.preventDefault(); sfx.unlock();
     if (!canMega(p)) return;                      // 満タンでなければ 何も起きない
-    sb.classList.add('holding'); sfx.tone(440,.06,'square',.26);
-    t = setTimeout(() => doMega(p), 500);
+    f.classList.add('holding'); sfx.tone(440,.06,'square',.26);
+    t = setTimeout(async () => {
+      f.classList.remove('holding');
+      if (!canMega(p)) return;
+      B.busy = true;                              // 聞いているあいだ 手を押せないようにする
+      const yes = await askMega(p);
+      B.busy = false;
+      if (yes) doMega(p);
+      else for (const q of [1,2]) renderBond(q);
+    }, 500);
   });
-  const cancel = () => { clearTimeout(t); sb.classList.remove('holding'); };
-  sb.addEventListener('pointerup', cancel);
-  sb.addEventListener('pointerleave', cancel);
-  sb.addEventListener('pointercancel', cancel);
-  sb.addEventListener('contextmenu', e => e.preventDefault());
+  f.addEventListener('pointerup', cancel);
+  f.addEventListener('pointerleave', cancel);
+  f.addEventListener('pointercancel', cancel);
+  f.addEventListener('contextmenu', e => e.preventDefault());
+}
+/* メガシンカするか聞く。ゾーンと同じく その子から読める向きで出す */
+function askMega(p){
+  return new Promise(res => {
+    const pk = cur(p);
+    const m = document.createElement('div');
+    m.className = 'megaask' + (p === 2 ? ' flip' : '');
+    m.innerHTML = `<div class="box"><div class="ttl">メガシンカ する？</div>`
+      + `<img class="ori-${pk.orient || 'h'}" src="${pk.img}" alt="">`
+      + `<div class="nm">${esc(pk.name)}</div>`
+      + `<div class="row"><button class="btn small yes">する！</button>`
+      + `<button class="btn sub small no">やめる</button></div></div>`;
+    $('#battle').append(m);
+    sfx.tone(784, .1, 'triangle', .28);
+    const done = v => { m.remove(); res(v); };
+    m.querySelector('.yes').onclick = () => { sfx.tone(1175, .12, 'triangle', .3); done(true); };
+    m.querySelector('.no').onclick = () => { sfx.tone(392, .12, 'square', .22); done(false); };
+  });
+}
+/* きずなが満タンになった最初の1回だけ 操作を教える */
+function megaHint(p){
+  if (B.hinted[p]) return;
+  B.hinted[p] = true;
+  const h = document.createElement('div'); h.className = 'mhint';
+  h.textContent = '⚡ ピックを ながおしで メガシンカ！';
+  $('#zone'+p).append(h);
+  [880, 1175].forEach((hz, i) => setTimeout(() => sfx.tone(hz, .13, 'triangle', .28), i * 120));
+  setTimeout(() => h.animate([{opacity:1},{opacity:0}], {duration:400, fill:'forwards'})
+    .finished.then(() => h.remove()).catch(() => {}), 3400);
 }
 function renderBond(p){
   const bar = $('#zone'+p+' .bond');
   const fill = bar.querySelector('i'), lb = bar.querySelector('b');
-  const sb = $('#arena .stonebtn.s'+p);
   const mk = megaKey(p);
-  const usable = !!cur(p)?.mega;
-  // 満タンのときだけ ストーンが虹に輝く。使ったら また くすんだ色に戻る
-  sb.className = 'stonebtn s' + p + (canMega(p) ? ' ready' : '') + (usable ? '' : ' cantmega');
-  sb.disabled = !usable;
+  // 満タンのときだけ ピックが虹に脈打つ。使ったら ふつうに戻る
+  const ready = canMega(p);
+  $('#f'+p).classList.toggle('canmega', ready);
+  if (ready) megaHint(p);
   if (mk){
     bar.className = 'bond mega';
     fill.style.width = '100%';
