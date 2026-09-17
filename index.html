@@ -49,7 +49,7 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 .side{display:flex;flex-direction:column;gap:8px;min-width:0}
 .sidelb{font-family:var(--display);font-size:16px;text-align:center}
 .side.s1 .sidelb{color:var(--p1)} .side.s2 .sidelb{color:var(--p2)}
-.slot{border-radius:20px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;min-height:170px;justify-content:center;width:100%;box-sizing:border-box}
+.slot{position:relative;border-radius:20px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;min-height:170px;justify-content:center;width:100%;box-sizing:border-box}
 .slot.p1{background:var(--p1)} .slot.p2{background:var(--p2)}
 .slot img{max-height:96px;max-width:100%;filter:drop-shadow(0 3px 0 rgba(0,0,0,.25))}
 .slot .empty{width:90px;height:90px;border:3px dashed rgba(255,255,255,.7);border-radius:16px;display:grid;place-items:center;font-size:34px}
@@ -104,6 +104,14 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 .types{display:flex;flex-wrap:wrap;gap:6px}
 .types button{padding:6px 10px;border-radius:99px;font-weight:800;font-size:13px;opacity:.45;color:#fff}
 .types button.on{opacity:1;box-shadow:0 0 0 3px #fff}
+.megas{display:flex;flex-direction:column;gap:6px}
+.megas button{padding:8px 11px;border-radius:12px;font-weight:800;font-size:13px;color:#fff;
+  background:var(--ground2);opacity:.45;text-align:left;line-height:1.25}
+.megas button.on{opacity:1;box-shadow:0 0 0 3px #fff}
+.megas button small{display:block;font-size:11px;font-weight:500;margin-top:2px}
+.megabadge{font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px;color:#fff;line-height:1.3}
+.slot .megaic,.card .megaic{position:absolute;right:6px;top:6px;font-size:13px;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))}
 .pickwrap{display:flex;gap:10px;flex-wrap:wrap}
 .pickwrap .btn{flex:1;min-width:140px;text-align:center}
 .filein{display:none}
@@ -120,6 +128,30 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 .hand circle{fill:none;stroke:var(--sun);stroke-width:8;stroke-dasharray:301;stroke-dashoffset:301}
 .hand.holding circle{transition:stroke-dashoffset .5s linear;stroke-dashoffset:0}
 .locked{font-family:var(--display);font-size:30px;color:var(--sun);text-shadow:0 3px 0 rgba(0,0,0,.3)}
+.bond{position:relative;width:min(72%,270px);height:15px;border-radius:99px;background:rgba(0,0,0,.32);overflow:hidden;flex-shrink:0}
+.bond i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:linear-gradient(90deg,#f0582a,#ffb03f,#ffd23f);transition:width .45s ease}
+.bond b{position:absolute;inset:0;display:grid;place-items:center;font-size:9px;font-weight:800;color:#fff;
+  text-shadow:0 1px 2px rgba(0,0,0,.95),0 0 3px rgba(0,0,0,.7);letter-spacing:.02em}
+.bond.full i{animation:bondpulse .8s ease-in-out infinite}
+@keyframes bondpulse{50%{filter:brightness(1.7)}}
+.bond.mega i{background:linear-gradient(90deg,#6a35b0,#8a4bd0,#c56bff)}
+/* メガシンカボタン：長押しのあいだ 白いワイプが満ちる */
+.megabtn{position:relative;overflow:hidden;font-family:var(--display);font-size:15px;padding:7px 18px;border-radius:99px;
+  background:linear-gradient(90deg,#8a4bd0,#c56bff,#ffd23f);color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.35);
+  box-shadow:0 3px 0 rgba(0,0,0,.35);touch-action:none}
+.megabtn span{position:relative;z-index:1}
+.megabtn::after{content:'';position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(255,255,255,.6)}
+.megabtn.holding::after{width:100%;transition:width .5s linear}
+/* メガシンカ中のオーラ */
+.fighter.mega img{animation:megaaura 1.1s ease-in-out infinite}
+@keyframes megaaura{
+  0%,100%{filter:drop-shadow(0 0 6px #c56bff) drop-shadow(0 0 14px rgba(255,210,63,.7)) drop-shadow(0 6px 0 rgba(0,0,0,.35))}
+  50%{filter:drop-shadow(0 0 16px #c56bff) drop-shadow(0 0 30px #ffd23f) drop-shadow(0 6px 0 rgba(0,0,0,.35))}
+}
+@media (prefers-reduced-motion:reduce){
+  .bond.full i,.fighter.mega img{animation:none}
+  .fighter.mega img{filter:drop-shadow(0 0 12px #c56bff) drop-shadow(0 0 22px #ffd23f) drop-shadow(0 6px 0 rgba(0,0,0,.35))}
+}
 .arena{position:relative;display:grid;grid-template-rows:1fr auto 1fr;align-items:center;justify-items:center;padding:6px 12px}
 .fighter{position:relative;display:flex;align-items:center;gap:10px;will-change:transform;z-index:2}
 .fighter .spin{display:flex;align-items:center;gap:10px}
@@ -207,6 +239,7 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 .cutin .ct{position:absolute;left:0;right:0;text-align:center;font-family:var(--display);color:#fff;line-height:1.1;
   font-size:clamp(24px,8vw,40px);text-shadow:0 0 0 #000,3px 3px 0 var(--ink),-2px -2px 0 var(--ink),2px -2px 0 var(--ink),-2px 2px 0 var(--ink)}
 .cutin .ct b{display:block;color:var(--sun);font-weight:400;font-size:1.25em}
+.cutin .stone{position:absolute;font-size:clamp(54px,20vw,110px);z-index:2;filter:drop-shadow(0 0 22px #fff)}
 .cutin .ct.bot{bottom:9%}
 .cutin .ct.top{top:9%;transform:rotate(180deg)}
 @media (prefers-reduced-motion:reduce){
@@ -281,12 +314,13 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
   <label class="field" for="nameIn">なまえ<input type="text" id="nameIn" maxlength="14" placeholder="れい：ケケンカニ"></label>
   <div class="field">タイプ（わざの エフェクトが かわる）<div class="types" id="typeBox"></div></div>
   <label class="field" for="moveIn">わざの なまえ<input type="text" id="moveIn" maxlength="14" placeholder="れい：ばくれつパンチ"></label>
+  <div class="field">メガシンカ（できる ピックだけ えらぶ）<div class="megas" id="megaBox"></div></div>
   <button class="btn" id="saveBtn">とうろくする</button>
 </section>
 
 <!-- バトル -->
 <section class="screen" id="battle" hidden>
-  <div class="zone p2" id="zone2"><div class="msg"></div><div class="hands"></div></div>
+  <div class="zone p2" id="zone2"><div class="msg"></div><div class="hands"></div><div class="bond"><i></i><b></b></div></div>
   <div class="arena" id="arena">
     <div class="fighter f2" id="f2"><div class="spin"><div class="stat"><div class="hearts"></div><div class="roster"></div></div><img alt=""><div class="throw"></div></div></div>
     <div class="banner" id="banner"></div>
@@ -294,7 +328,7 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
     <canvas id="fx"></canvas>
     <button class="quit" id="quitBtn" aria-label="やめる">✕</button>
   </div>
-  <div class="zone p1" id="zone1"><div class="msg"></div><div class="hands"></div></div>
+  <div class="zone p1" id="zone1"><div class="msg"></div><div class="hands"></div><div class="bond"><i></i><b></b></div></div>
 </section>
 
 <script>
@@ -303,8 +337,8 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 /* 開発用のバージョン表示。index.html に手を入れたら ここも更新する。
    iPhoneのホーム画面から起動すると 古いキャッシュのままのことがあるので、
    いま端末に入っているものを ホーム下部で確認できるようにしている */
-const VERSION = '0.3.0';
-const BUILD = '2026-09-16';
+const VERSION = '0.4.0';
+const BUILD = '2026-09-17';
 
 const TYPES = [
   ['ノーマル','#9a9a7a','normal'],['ほのお','#f0582a','fire'],['みず','#3a8cf0','water'],['でんき','#e8b800','elec'],
@@ -315,6 +349,20 @@ const TYPES = [
 ];
 const typeInfo = n => TYPES.find(t => t[0] === n) || TYPES[0];
 const HANDS = [['gu','✊'],['choki','✌️'],['pa','✋']];
+/* メガシンカ技。ずかん登録で えらんだ ピックだけが メガシンカできる。
+   [キー, わざ名, 説明, 色] */
+const MEGA = [
+  ['crit',  'かいしんの いちげき', 'かつと ハートを 2つ けずる',           '#ff5d52'],
+  ['guard', 'まもりの かべ',       'まけても ハートが へらない',           '#3ddc97'],
+  ['drain', 'いのちを すいとる',   'かつと けずって じぶんも 1つ かいふく', '#c56bff'],
+  ['storm', 'あらしの ちから',     'あいこでも あいてを 1つ けずる',       '#23b8e8'],
+];
+const megaInfo = k => MEGA.find(m => m[0] === k) || null;
+const MEGA_ROUNDS = 3;          // メガシンカが つづく ラウンドすう
+const BOND_MAX = 100;           // きずなゲージ
+const BOND_GAIN = {lose:50, win:25, draw:15};
+/* 溜まり方に運をまぜる。同じ展開でも 発動タイミングが毎回ずれる */
+const bondRoll = base => Math.round(base * (0.8 + Math.random() * 0.4));
 const BEATS = {gu:'choki', choki:'pa', pa:'gu'};
 const MAXHP = 3;
 
@@ -365,7 +413,7 @@ const store = {
 };
 
 /* サンプルピック（公式画像は使わず、図形で作る） */
-function samplePick(name, type, move, orient, symbol){
+function samplePick(name, type, move, orient, symbol, mega){
   const W = orient === 'h' ? 486 : 300, H = orient === 'h' ? 300 : 486;
   const c = document.createElement('canvas'); c.width = W; c.height = H;
   const x = c.getContext('2d'), col = typeInfo(type)[1];
@@ -377,14 +425,14 @@ function samplePick(name, type, move, orient, symbol){
   x.fillText(symbol, W/2, H/2);
   x.fillStyle = '#fff'; x.font = `800 ${Math.min(W,H)*0.09}px sans-serif`;
   x.fillText('SAMPLE', W/2, H - 40);
-  return {id:'s-'+name, name, type, move, orient, img:c.toDataURL('image/png'), created:Date.now() + (orient==='v'?1:0), sample:true};
+  return {id:'s-'+name, name, type, move, orient, mega, img:c.toDataURL('image/png'), created:Date.now() + (orient==='v'?1:0), sample:true};
 }
 let picks = [];
 async function loadPicks(){
   picks = await store.all();
   if (!picks.length){
-    const a = samplePick('サンプル ほのお','ほのお','ファイアタックル','h','🔥');
-    const b = samplePick('サンプル でんき','でんき','かみなりキック','v','⚡');
+    const a = samplePick('サンプル ほのお','ほのお','ファイアタックル','h','🔥','crit');
+    const b = samplePick('サンプル でんき','でんき','かみなりキック','v','⚡','guard');
     await store.put(a); await store.put(b);
     picks = [a, b];
   }
@@ -470,6 +518,7 @@ function renderHome(){
       b.className = 'slot p' + p;
       b.innerHTML = `<div class="ord">${i+1}</div>` + (pk
         ? `<img src="${pk.img}" alt=""><div class="meta"><div class="nm">${esc(pk.name)}</div>${chipHTML(pk.type)}</div>`
+          + (pk.mega ? `<div class="megaic">⚡</div>` : '')
         : `<div class="empty">？</div><div class="meta"><div class="nm">タップして えらぶ</div></div>`);
       b.onclick = () => { selFor = {p, i}; renderSelect(); show('select'); };
       side.append(b);
@@ -491,6 +540,7 @@ function renderSelect(){
     const c = document.createElement('button');
     c.className = 'card' + (team[p][i] === pk.id ? ' sel' : '') + (used ? ' used' : '');
     c.innerHTML = `<img src="${pk.img}" alt=""><div class="nm">${esc(pk.name)}</div>${chipHTML(pk.type)}`
+      + (pk.mega ? `<div class="megaic">⚡</div>` : '')
       + (used ? `<div class="usedlb">${ORD[at]}で つかってるよ</div>` : '');
     c.onclick = () => {
       if (used){ team[p][at] = team[p][i]; toast(`${ORD[at]}と いれかえたよ`); }  // 重複させずに入れ替える
@@ -512,7 +562,10 @@ function renderDex(){
   g.append(add);
   for (const pk of picks){
     const c = document.createElement('div'); c.className = 'card';
-    c.innerHTML = `<img src="${pk.img}" alt=""><div class="nm">${esc(pk.name)}</div>${chipHTML(pk.type)}<div style="font-size:12px">${esc(pk.move)}</div><button class="del" aria-label="けす">✕</button>`;
+    const mi = megaInfo(pk.mega);
+    c.innerHTML = `<img src="${pk.img}" alt=""><div class="nm">${esc(pk.name)}</div>${chipHTML(pk.type)}<div style="font-size:12px">${esc(pk.move)}</div>`
+      + (mi ? `<div class="megabadge" style="background:${mi[3]}">⚡${esc(mi[1])}</div>` : '')
+      + `<button class="del" aria-label="けす">✕</button>`;
     c.querySelector('.del').onclick = () => confirmBox(`「${pk.name}」を けしますか？`, async () => {
       await store.del(pk.id); picks = picks.filter(x => x.id !== pk.id); renderDex();
     });
@@ -522,7 +575,7 @@ function renderDex(){
 
 /* ---------- とうろくエディタ ---------- */
 const cv = $('#edCanvas'), cx = cv.getContext('2d');
-const ed = {img:null, orient:'h', tx:0, ty:0, s:1, rot:0, fine:0, type:'ノーマル'};
+const ed = {img:null, orient:'h', tx:0, ty:0, s:1, rot:0, fine:0, type:'ノーマル', mega:null};
 const typeBox = $('#typeBox');
 TYPES.forEach(([n,col]) => {
   const b = document.createElement('button'); b.textContent = n; b.style.background = col;
@@ -530,9 +583,20 @@ TYPES.forEach(([n,col]) => {
   typeBox.append(b);
 });
 function syncTypes(){ [...typeBox.children].forEach(b => b.classList.toggle('on', b.textContent === ed.type)); }
+const megaBox = $('#megaBox');
+[[null, 'メガシンカ しない', 'ふつうの ピック'], ...MEGA].forEach(([k, name, desc, col]) => {
+  const b = document.createElement('button');
+  b.dataset.mega = k || '';
+  b.innerHTML = `${esc(name)}<small>${esc(desc)}</small>`;
+  if (col) b.style.background = col;
+  b.onclick = () => { ed.mega = k; syncMegas(); };
+  megaBox.append(b);
+});
+function syncMegas(){ [...megaBox.children].forEach(b => b.classList.toggle('on', (b.dataset.mega || null) === ed.mega)); }
 function openEditor(){
-  Object.assign(ed, {img:null, orient:'h', tx:0, ty:0, s:1, rot:0, fine:0, type:'ノーマル'});
-  $('#nameIn').value = ''; $('#moveIn').value = ''; $('#rotRange').value = 0; syncRot(); syncTypes(); syncOrient();
+  Object.assign(ed, {img:null, orient:'h', tx:0, ty:0, s:1, rot:0, fine:0, type:'ノーマル', mega:null});
+  $('#nameIn').value = ''; $('#moveIn').value = ''; $('#rotRange').value = 0;
+  syncRot(); syncTypes(); syncMegas(); syncOrient();
   show('editor'); sizeCanvas();
 }
 function sizeCanvas(){
@@ -653,7 +717,7 @@ $('#saveBtn').onclick = async () => {
   o.beginPath(); pickPath(o, fx, fy, fw, fh, ed.orient); o.clip();
   o.imageSmoothingQuality = 'high';
   drawImg(o, W, H);
-  const pk = {id:'p-'+Date.now(), name, type:ed.type, move, orient:ed.orient, img:out.toDataURL('image/png'), created:Date.now()};
+  const pk = {id:'p-'+Date.now(), name, type:ed.type, move, orient:ed.orient, mega:ed.mega, img:out.toDataURL('image/png'), created:Date.now()};
   await store.put(pk); picks.push(pk);
   toast('とうろく しました'); sfx.tone(660,.08); setTimeout(()=>sfx.tone(990,.12),90);
   show('dex');
@@ -738,9 +802,18 @@ function tick(){
 
 /* ---------- バトル ---------- */
 /* size 人ずつの勝ち抜き戦。team/hp は出場順の配列、idx が今たたかっているピック */
-const B = {size:1, team:{1:[],2:[]}, hp:{1:[],2:[]}, idx:{1:0,2:0}, choice:{1:null,2:null}, busy:false, over:false};
+const B = {size:1, team:{1:[],2:[]}, hp:{1:[],2:[]}, idx:{1:0,2:0},
+  bond:{1:0,2:0}, megaUsed:{1:false,2:false}, mega:{1:0,2:0},   // きずな / 使用済み / のこりラウンド
+  choice:{1:null,2:null}, busy:false, over:false};
 const cur = p => B.team[p][B.idx[p]];
 const curHp = p => B.hp[p][B.idx[p]] ?? 0;
+/* いま発動中のメガシンカ技のキー。発動していなければ null */
+const megaKey = p => B.mega[p] > 0 ? (cur(p)?.mega || null) : null;
+/* メガストーンを使える条件：バトル中まだ1回も使っておらず、ゲージ満タンで、
+   いま出ているピックがメガシンカできて、まだ手を決めていないこと */
+const canMega = p => !B.megaUsed[p] && B.mega[p] === 0 && B.bond[p] >= BOND_MAX
+  && !!cur(p)?.mega && !B.choice[p] && !B.busy && !B.over;
+function addBond(p, base){ B.bond[p] = Math.min(BOND_MAX, B.bond[p] + bondRoll(base)); }
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const center = el => { const a = el.getBoundingClientRect(), b = $('#arena').getBoundingClientRect(); return {x:a.left - b.left + a.width/2, y:a.top - b.top + a.height/2}; };
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -751,13 +824,15 @@ function startBattle(){
     B.team[p] = team[p].map(id => picks.find(x => x.id === id));
     B.hp[p] = B.team[p].map(() => MAXHP);
     B.idx[p] = 0;
+    B.bond[p] = 0; B.megaUsed[p] = false; B.mega[p] = 0;
+    $('#f'+p).classList.remove('mega');
     resetFighter(p);
     setFighter(p);
   }
   $('.result')?.remove();
   show('battle');
   requestAnimationFrame(sizeFx);
-  renderHearts(); renderRoster();
+  renderHearts(); renderRoster(); renderBond(1); renderBond(2);
   newRound();
   sfx.say(B.size > 1 ? `${SIZE_LABEL[B.size]} バトル スタート！` : 'バトル スタート！');
 }
@@ -776,6 +851,22 @@ function renderHearts(){
     const hp = curHp(p);
     $('#f'+p+' .hearts').innerHTML = Array.from({length:MAXHP}, (_,i) => `<span class="${i < hp ? '' : 'gone'}">❤️</span>`).join('');
   }
+}
+function renderBond(p){
+  const bar = $('#zone'+p+' .bond'), fill = bar.querySelector('i'), lb = bar.querySelector('b');
+  const mk = megaKey(p);
+  if (mk){
+    bar.className = 'bond mega';
+    fill.style.width = '100%';
+    lb.textContent = `メガシンカ ちゅう！ あと ${B.mega[p]}かい`;
+    return;
+  }
+  const pct = Math.round(B.bond[p] / BOND_MAX * 100);
+  bar.className = 'bond' + (canMega(p) ? ' full' : '');
+  fill.style.width = pct + '%';
+  lb.textContent = B.megaUsed[p] ? 'メガストーンは つかった'
+    : !cur(p)?.mega ? `きずな ${pct}%`
+    : pct >= 100 ? 'メガシンカ できる！' : `きずな ${pct}%`;
 }
 function renderRoster(){
   for (const p of [1,2]){
@@ -799,7 +890,22 @@ function renderZone(p){
     hands.innerHTML = '<div class="locked">OK！ まってね</div>';
     return;
   }
-  msg.textContent = 'ながおしで えらんでね';
+  if (canMega(p)){
+    // 手えらびの案内と同じ場所に出す。ゾーンの高さを増やさずに済む
+    msg.innerHTML = '<button class="megabtn"><span>⚡ メガシンカ！</span></button>';
+    const mb = msg.querySelector('.megabtn');
+    let mt = null;
+    const mstart = ev => { ev.preventDefault(); sfx.unlock(); if (!canMega(p)) return;
+      mb.classList.add('holding'); sfx.tone(440,.06);
+      mt = setTimeout(() => doMega(p), 500); };
+    const mcancel = () => { clearTimeout(mt); mb.classList.remove('holding'); };
+    mb.addEventListener('pointerdown', mstart);
+    mb.addEventListener('pointerup', mcancel); mb.addEventListener('pointerleave', mcancel);
+    mb.addEventListener('pointercancel', mcancel);
+    mb.addEventListener('contextmenu', e => e.preventDefault());
+  } else {
+    msg.textContent = 'ながおしで えらんでね';
+  }
   for (const [k, e] of HANDS){
     const b = document.createElement('button'); b.className = 'hand'; b.setAttribute('aria-label', k);
     b.innerHTML = `${e}<svg viewBox="0 0 106 106"><circle cx="53" cy="53" r="48"/></svg>`;
@@ -816,7 +922,7 @@ function renderZone(p){
 function lock(p, k){
   if (B.choice[p] || B.busy) return;
   B.choice[p] = k; sfx.tone(784,.1); setTimeout(()=>sfx.tone(1175,.12), 90);
-  renderZone(p);
+  renderZone(p); renderBond(p);
   if (B.choice[1] && B.choice[2]) resolve();
 }
 function setBanner(big, sub=''){
@@ -836,22 +942,56 @@ async function resolve(){
   }
   await wait(700);
   const a = B.choice[1], b = B.choice[2];
+  let win, lose;
   if (a === b){
     setBanner('あいこ！'); sfx.say('あいこで しょ');
     for (const p of [1,2]) $('#f'+p).animate([{transform:'translateX(0)'},{transform:'translateX(-8px)'},{transform:'translateX(8px)'},{transform:'translateX(0)'}], {duration:300, iterations:2});
     await wait(1200);
-    return newRound();
+    // あらしの ちから：あいこでも けずる。両方が あらしなら ぶつかって 相殺する
+    const s1 = megaKey(1) === 'storm', s2 = megaKey(2) === 'storm';
+    if (s1 === s2){
+      for (const p of [1,2]) addBond(p, BOND_GAIN.draw);
+      return endRound();
+    }
+    win = s1 ? 1 : 2; lose = 3 - win;
+  } else {
+    win = BEATS[a] === b ? 1 : 2; lose = 3 - win;
   }
-  const win = BEATS[a] === b ? 1 : 2, lose = 3 - win;
+
+  const wk = megaKey(win), lk = megaKey(lose);
+  let dmg = wk === 'crit' ? 2 : 1;          // かいしんの いちげき
+  if (lk === 'guard') dmg = 0;              // まもりの かべ
   await attack(win, lose);
-  B.hp[lose][B.idx[lose]]--; renderHearts(); renderRoster();
-  await wait(500);
+  if (dmg){
+    B.hp[lose][B.idx[lose]] = Math.max(0, B.hp[lose][B.idx[lose]] - dmg);
+    if (wk === 'drain' && curHp(win) < MAXHP){   // いのちを すいとる
+      B.hp[win][B.idx[win]]++;
+      setBanner('ハートを すいとった！');
+      [880, 1175].forEach((f, i) => setTimeout(() => sfx.tone(f, .16), i*110));
+    }
+  } else {
+    setBanner('まもりの かべ！', 'ハートが へらない');
+    sfx.tone(240, .45, 'sine', .22);
+  }
+  renderHearts(); renderRoster();
+  await wait(dmg ? 500 : 1100);
+  // きずなは 負けたほうに 多くたまる（運の係数つき）
+  addBond(win, BOND_GAIN.win);
+  addBond(lose, BOND_GAIN.lose);
   if (curHp(lose) <= 0){
     await knockOut(lose);
     B.idx[lose]++; renderRoster();
     if (B.idx[lose] >= B.size) return finish(win, lose);   // 全員たおれた＝チームの負け
     await swapIn(lose);
   }
+  endRound();
+}
+/* ラウンドの締め。メガシンカの のこり回数を へらし、切れたら知らせる */
+async function endRound(){
+  for (const p of [1,2]){
+    if (B.mega[p] > 0 && --B.mega[p] === 0) await megaEnd(p);
+  }
+  for (const p of [1,2]) renderBond(p);
   newRound();
 }
 let speedLines = null;
@@ -870,12 +1010,13 @@ function makeSpeedLines(){
   }
   return `url(${c.toDataURL()})`;
 }
-async function cutIn(w, pk){
+async function cutIn(w, pk, mi){
   speedLines = speedLines || makeSpeedLines();
   const t = typeInfo(pk.type), c = document.createElement('div');
   c.className = 'cutin';
-  c.style.setProperty('--c', t[1]); c.style.setProperty('--c2', '#1d2340'); c.style.setProperty('--lines', speedLines);
-  const txt = `${esc(pk.name)}の<b>${esc(pk.move)}！</b>`;
+  c.style.setProperty('--c', mi ? mi[3] : t[1]);
+  c.style.setProperty('--c2', mi ? '#2a1050' : '#1d2340'); c.style.setProperty('--lines', speedLines);
+  const txt = `${esc(pk.name)}の<b>${esc(mi ? mi[1] : pk.move)}！</b>`;
   c.innerHTML = `<div class="dim"></div><div class="flash"></div><div class="band"></div><img class="ori-${pk.orient || 'h'}" src="${pk.img}" alt=""><div class="ct ${w === 1 ? 'bot' : 'top'}">${txt}</div>`;
   $('#battle').append(c);
   const [, flash, band, img, label] = c.children;
@@ -901,12 +1042,14 @@ async function cutIn(w, pk){
 }
 async function attack(w, l){
   const pk = cur(w), kind = typeInfo(pk.type)[2];
+  const mi = megaInfo(megaKey(w));                 // メガシンカ中なら メガ技を使う
+  const moveName = mi ? mi[1] : pk.move;
   const A = $('#f'+w), D = $('#f'+l);
   const ca = center(A), cd = center(D), dy = (cd.y - ca.y) * 0.72;
   // 技名は こうげきした がわ だけに 見える向きで出す
-  $('#banner').innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;${w === 2 ? 'transform:rotate(180deg)' : ''}"><span style="font-size:.6em;color:#fff">${esc(pk.name)}の</span><span>${esc(pk.move)}！</span></div>`;
-  sfx.say(`${pk.name}の ${pk.move}`);
-  await cutIn(w, pk);
+  $('#banner').innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;${w === 2 ? 'transform:rotate(180deg)' : ''}"><span style="font-size:.6em;color:#fff">${esc(pk.name)}の</span><span>${esc(moveName)}！</span></div>`;
+  sfx.say(`${pk.name}の ${moveName}`);
+  await cutIn(w, pk, mi);
   // ためる
   sfx.tone(180, .5, 'sawtooth', .08, 700);
   if (!reduce) await A.animate([
@@ -937,6 +1080,60 @@ function arenaShake(){
   if (reduce) return;
   $('#arena').animate([{transform:'translate(0,0)'},{transform:'translate(5px,-4px)'},{transform:'translate(-5px,3px)'},{transform:'translate(3px,2px)'},{transform:'translate(0,0)'}], {duration:260});
 }
+/* メガストーン発動。カットインのあと オーラをまとう */
+async function doMega(p){
+  if (!canMega(p)) return;
+  B.busy = true;
+  B.megaUsed[p] = true; B.bond[p] = 0; B.mega[p] = MEGA_ROUNDS;
+  await megaCutIn(p);
+  $('#f'+p).classList.add('mega');
+  for (const q of [1,2]) renderBond(q);
+  B.busy = false;
+  renderZone(p);
+}
+async function megaCutIn(p){
+  const pk = cur(p), mi = megaInfo(pk.mega);
+  speedLines = speedLines || makeSpeedLines();
+  const c = document.createElement('div'); c.className = 'cutin';
+  c.style.setProperty('--c', mi[3]); c.style.setProperty('--c2', '#2a1050');
+  c.style.setProperty('--lines', speedLines);
+  const rot = p === 1 ? 0 : 180;
+  c.innerHTML = `<div class="dim"></div><div class="flash"></div><div class="band"></div>`
+    + `<img class="ori-${pk.orient || 'h'}" src="${pk.img}" alt="">`
+    + `<div class="stone">💎</div>`
+    + `<div class="ct ${p === 1 ? 'bot' : 'top'}">${esc(pk.name)}<b>メガシンカ！</b></div>`;
+  $('#battle').append(c);
+  const [, flash, band, img, stone, label] = c.children;
+  img.style.transform = `rotate(${rot}deg)`;
+  sfx.tone(200, 1.0, 'sawtooth', .1, 1760);   // ぐんぐん上がる音
+  sfx.noise(.7, 3000, .14);
+  sfx.say(`${pk.name} メガシンカ！`);
+  flash.animate([{opacity:0},{opacity:.95},{opacity:0}], {duration:900, fill:'forwards'});
+  band.animate([{transform:'rotate(-12deg) scaleY(0)'},{transform:'rotate(-12deg) scaleY(1)'}], {duration:240, fill:'forwards', easing:'ease-out'});
+  // ストーンが回りながら ピックに吸い込まれる
+  stone.animate([
+    {transform:'scale(0) rotate(0)', opacity:0},
+    {transform:'scale(1.6) rotate(360deg)', opacity:1, offset:.45},
+    {transform:'scale(.2) rotate(720deg)', opacity:0}], {duration:reduce?200:1000, fill:'forwards', easing:'ease-in'});
+  img.animate([
+    {transform:`rotate(${rot}deg) scale(.8)`, filter:'brightness(1)'},
+    {transform:`rotate(${rot}deg) scale(.95)`, filter:'brightness(3)', offset:.5},
+    {transform:`rotate(${rot}deg) scale(1.15)`, filter:'brightness(1)'}], {duration:reduce?200:1100, fill:'forwards', easing:'ease-out'});
+  {
+    const base = p === 2 ? 'rotate(180deg) ' : '';
+    label.animate([{opacity:0, transform:base+'scale(2.2)'},{opacity:1, transform:base+'scale(1)'}],
+      {duration:360, delay:420, fill:'backwards'});
+  }
+  await wait(reduce ? 300 : 1250);
+  const out = c.animate([{opacity:1},{opacity:0}], {duration:220, fill:'forwards'});
+  await out.finished; c.remove();
+}
+async function megaEnd(p){
+  $('#f'+p).classList.remove('mega');
+  setBanner('メガシンカが とけた！');
+  sfx.tone(700, .6, 'sine', .12, 180);
+  await wait(reduce ? 200 : 950);
+}
 /* たおれたピックが 回転しながら ふっとぶ */
 async function knockOut(l){
   const D = $('#f'+l), cd = center(D);
@@ -950,9 +1147,12 @@ async function knockOut(l){
 /* つぎのピックが 自分がわから 登場する。ハートは 3つで 仕切りなおし */
 async function swapIn(p){
   const f = $('#f'+p), pk = cur(p);
+  // メガシンカしたピックが たおれたら 効果も消える（使用済みフラグは残す）
+  if (B.mega[p] > 0){ B.mega[p] = 0; f.classList.remove('mega'); }
   resetFighter(p);
   setFighter(p);
   renderHearts(); renderRoster();
+  renderBond(p);
   setBanner(`${sideName(p)}の こうたい！`, pk.name);
   sfx.say(`つぎは ${pk.name}`);
   [587, 784, 988].forEach((hz, i) => setTimeout(() => sfx.tone(hz, .14), i*110));
