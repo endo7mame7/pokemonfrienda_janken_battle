@@ -398,7 +398,7 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 /* 開発用のバージョン表示。index.html に手を入れたら ここも更新する。
    iPhoneのホーム画面から起動すると 古いキャッシュのままのことがあるので、
    いま端末に入っているものを ホーム下部で確認できるようにしている */
-const VERSION = '0.5.1';
+const VERSION = '0.6.0';
 const BUILD = '2026-09-17';
 
 const TYPES = [
@@ -422,7 +422,7 @@ const megaInfo = k => MEGA.find(m => m[0] === k) || null;
 /* メガシンカ技の名前。登録していなければ そのパターンの既定名を使う */
 const megaMoveOf = pk => pk?.megaMove || megaInfo(pk?.mega)?.[1] || '';
 const RAINBOW = ['#ff3b30','#ff9500','#ffd23f','#3ddc97','#23b8e8','#5b6bff','#c56bff'];
-const MEGA_ROUNDS = 3;          // メガシンカが つづく ラウンドすう
+const MEGA_ROUNDS = 1;          // メガシンカが つづく ラウンドすう（こうげき1回ぶん）
 const BOND_MAX = 100;           // きずなゲージ
 const BOND_GAIN = {lose:50, win:25, draw:15};
 const BOND_STREAK = 25;   // 連敗が続くほど 1回あたりの上乗せが増える
@@ -837,26 +837,42 @@ $('#saveBtn').onclick = async () => {
 
 /* ---------- サウンド ---------- */
 const sfx = {
-  on:true, ac:null,
-  unlock(){ try { this.ac = this.ac || new (window.AudioContext||window.webkitAudioContext)(); this.ac.resume(); } catch(e){} },
-  tone(f, d, type='square', vol=.12, slide=0){
-    if (!this.on || !this.ac) return;
+  on:true, ac:null, bus:null,
+  /* 読み上げ音声（SpeechSynthesis）は端末の音量そのままで鳴るのに対し、
+     Web Audio のゲインは小さいままだと効果音が埋もれてしまう。
+     まとめて持ち上げたうえで、コンプレッサーでピークを抑えて歪ませない */
+  unlock(){
+    try {
+      if (!this.ac){
+        this.ac = new (window.AudioContext||window.webkitAudioContext)();
+        const g = this.ac.createGain(); g.gain.value = 2.6;
+        const c = this.ac.createDynamicsCompressor();
+        g.connect(c).connect(this.ac.destination);
+        this.bus = g;
+      }
+      this.ac.resume();
+    } catch(e){}
+  },
+  tone(f, d, type='square', vol=.22, slide=0){
+    if (!this.on || !this.bus) return;
     const a = this.ac, o = a.createOscillator(), g = a.createGain(), t = a.currentTime;
     o.type = type; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(slide, t+d);
     g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t+d);
-    o.connect(g).connect(a.destination); o.start(t); o.stop(t+d+.02);
+    o.connect(g).connect(this.bus); o.start(t); o.stop(t+d+.02);
   },
-  noise(d, freq=1200, vol=.25){
-    if (!this.on || !this.ac) return;
+  noise(d, freq=1200, vol=.38){
+    if (!this.on || !this.bus) return;
     const a = this.ac, n = a.createBuffer(1, a.sampleRate*d, a.sampleRate), ch = n.getChannelData(0);
     for (let i=0;i<ch.length;i++) ch[i] = (Math.random()*2-1) * (1 - i/ch.length);
     const s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
     s.buffer = n; f.type = 'bandpass'; f.frequency.value = freq; g.gain.value = vol;
-    s.connect(f).connect(g).connect(a.destination); s.start();
+    s.connect(f).connect(g).connect(this.bus); s.start();
   },
   say(t){
     if (!this.on) return;
-    try { const u = new SpeechSynthesisUtterance(t); u.lang = 'ja-JP'; u.rate = 1.05; u.pitch = 1.3; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch(e){}
+    // 効果音とぶつかりすぎないよう 読み上げは少しだけ下げる
+    try { const u = new SpeechSynthesisUtterance(t); u.lang = 'ja-JP'; u.rate = 1.05; u.pitch = 1.3;
+      u.volume = .85; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch(e){}
   }
 };
 
@@ -916,16 +932,16 @@ function tick(){
 /* ---------- バトル ---------- */
 /* size 人ずつの勝ち抜き戦。team/hp は出場順の配列、idx が今たたかっているピック */
 const B = {size:1, team:{1:[],2:[]}, hp:{1:[],2:[]}, idx:{1:0,2:0},
-  bond:{1:0,2:0}, megaUsed:{1:false,2:false}, mega:{1:0,2:0},   // きずな / 使用済み / のこりラウンド
+  bond:{1:0,2:0}, mega:{1:0,2:0},                               // きずな / メガシンカの のこり回数
   streak:{1:0,2:0},                                            // 連敗数
   choice:{1:null,2:null}, busy:false, over:false};
 const cur = p => B.team[p][B.idx[p]];
 const curHp = p => B.hp[p][B.idx[p]] ?? 0;
 /* いま発動中のメガシンカ技のキー。発動していなければ null */
 const megaKey = p => B.mega[p] > 0 ? (cur(p)?.mega || null) : null;
-/* メガストーンを使える条件：バトル中まだ1回も使っておらず、ゲージ満タンで、
-   いま出ているピックがメガシンカできて、まだ手を決めていないこと */
-const canMega = p => !B.megaUsed[p] && B.mega[p] === 0 && B.bond[p] >= BOND_MAX
+/* メガストーンを使える条件：ゲージ満タンで、いま出ているピックがメガシンカできて、
+   まだ手を決めていないこと。ゲージを溜め直せば 何度でも使える */
+const canMega = p => B.mega[p] === 0 && B.bond[p] >= BOND_MAX
   && !!cur(p)?.mega && !B.choice[p] && !B.busy && !B.over;
 function addBond(p, base){ B.bond[p] = Math.min(BOND_MAX, B.bond[p] + bondRoll(base)); }
 const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -938,7 +954,7 @@ function startBattle(){
     B.team[p] = team[p].map(id => picks.find(x => x.id === id));
     B.hp[p] = B.team[p].map(() => MAXHP);
     B.idx[p] = 0;
-    B.bond[p] = 0; B.megaUsed[p] = false; B.mega[p] = 0; B.streak[p] = 0;
+    B.bond[p] = 0; B.mega[p] = 0; B.streak[p] = 0;
     $('#f'+p).classList.remove('mega');
     resetFighter(p);
     setFighter(p);
@@ -972,7 +988,7 @@ function renderBond(p){
   if (mk){
     bar.className = 'bond mega';
     fill.style.width = '100%';
-    lb.textContent = `メガシンカ ちゅう！ あと ${B.mega[p]}かい`;
+    lb.textContent = '⚡ メガシンカ ちゅう！';
     return;
   }
   const pct = Math.round(B.bond[p] / BOND_MAX * 100);
@@ -980,7 +996,6 @@ function renderBond(p){
   fill.style.width = pct + '%';
   // メガシンカできないピックは 理由が分かるように出す（ゲージだけ満タンでボタンが出ないと混乱する）
   lb.textContent = !cur(p)?.mega ? 'この ピックは メガシンカ できない'
-    : B.megaUsed[p] ? 'メガストーンは つかった'
     : pct >= 100 ? '⚡ メガシンカ できる！' : `きずな ${pct}%`;
 }
 /* 連敗ボーナスがついたとき ゲージを一瞬光らせる */
@@ -1017,7 +1032,7 @@ function renderZone(p){
     const mb = msg.querySelector('.megabtn');
     let mt = null;
     const mstart = ev => { ev.preventDefault(); sfx.unlock(); if (!canMega(p)) return;
-      mb.classList.add('holding'); sfx.tone(440,.06);
+      mb.classList.add('holding'); sfx.tone(440,.06,'square',.26);
       mt = setTimeout(() => doMega(p), 500); };
     const mcancel = () => { clearTimeout(mt); mb.classList.remove('holding'); };
     mb.addEventListener('pointerdown', mstart);
@@ -1031,7 +1046,7 @@ function renderZone(p){
     const b = document.createElement('button'); b.className = 'hand'; b.setAttribute('aria-label', k);
     b.innerHTML = `${e}<svg viewBox="0 0 106 106"><circle cx="53" cy="53" r="48"/></svg>`;
     let timer = null;
-    const start = ev => { ev.preventDefault(); sfx.unlock(); if (B.busy) return; b.classList.add('holding'); sfx.tone(520,.05);
+    const start = ev => { ev.preventDefault(); sfx.unlock(); if (B.busy) return; b.classList.add('holding'); sfx.tone(520,.05,'square',.26);
       timer = setTimeout(() => { lock(p, k); }, 500); };
     const cancel = () => { clearTimeout(timer); b.classList.remove('holding'); };
     b.addEventListener('pointerdown', start);
@@ -1042,7 +1057,7 @@ function renderZone(p){
 }
 function lock(p, k){
   if (B.choice[p] || B.busy) return;
-  B.choice[p] = k; sfx.tone(784,.1); setTimeout(()=>sfx.tone(1175,.12), 90);
+  B.choice[p] = k; sfx.tone(784,.1,'square',.3); setTimeout(()=>sfx.tone(1175,.12,'square',.3), 90);
   renderZone(p); renderBond(p);
   if (B.choice[1] && B.choice[2]) resolve();
 }
@@ -1052,7 +1067,7 @@ function setBanner(big, sub=''){
 async function resolve(){
   B.busy = true;
   for (const w of ['じゃん','けん','ぽん！']){
-    setBanner(w); sfx.tone(w==='ぽん！'?988:660, .12);
+    setBanner(w); sfx.tone(w==='ぽん！'?988:660, .16, 'square', .3);
     if (w==='じゃん') sfx.say('じゃん けん ぽん');
     await wait(w==='ぽん！' ? 200 : 450);
   }
@@ -1072,7 +1087,7 @@ async function resolve(){
     const s1 = megaKey(1) === 'storm', s2 = megaKey(2) === 'storm';
     if (s1 === s2){
       for (const p of [1,2]) addBond(p, BOND_GAIN.draw);
-      return endRound();
+      return endRound(true);          // だれも こうげきしていない
     }
     win = s1 ? 1 : 2; lose = 3 - win;
   } else {
@@ -1082,7 +1097,7 @@ async function resolve(){
   const wk = megaKey(win), lk = megaKey(lose);
   let dmg = wk === 'crit' ? 2 : 1;          // かいしんの いちげき
   if (lk === 'guard') dmg = 0;              // まもりの かべ
-  await attack(win, lose);
+  await attack(win, lose, dmg);
   if (dmg){
     B.hp[lose][B.idx[lose]] = Math.max(0, B.hp[lose][B.idx[lose]] - dmg);
     if (wk === 'drain' && curHp(win) < MAXHP){   // いのちを すいとる
@@ -1110,10 +1125,13 @@ async function resolve(){
   }
   endRound();
 }
-/* ラウンドの締め。メガシンカの のこり回数を へらし、切れたら知らせる */
-async function endRound(){
-  for (const p of [1,2]){
-    if (B.mega[p] > 0 && --B.mega[p] === 0) await megaEnd(p);
+/* ラウンドの締め。こうげきが起きたラウンドだけ メガシンカを1つ消費する。
+   あいこで何も起きなかった回に消えると、せっかく溜めたゲージが無駄になるため */
+async function endRound(noAttack){
+  if (!noAttack){
+    for (const p of [1,2]){
+      if (B.mega[p] > 0 && --B.mega[p] === 0) await megaEnd(p);
+    }
   }
   for (const p of [1,2]) renderBond(p);
   newRound();
@@ -1166,7 +1184,7 @@ async function cutIn(w, pk, mi){
   const out = c.animate([{opacity:1},{opacity:0}], {duration:200, fill:'forwards'});
   await out.finished; c.remove();
 }
-async function attack(w, l){
+async function attack(w, l, dmg = 1){
   const pk = cur(w);
   const mi = megaInfo(megaKey(w));                 // メガシンカ中なら メガ技を使う
   const kind = mi ? 'rainbow' : typeInfo(pk.type)[2];
@@ -1178,19 +1196,24 @@ async function attack(w, l){
   sfx.say(`${pk.name}の ${moveName}`);
   await cutIn(w, pk, mi);
   // ためる
-  sfx.tone(180, .5, 'sawtooth', .08, 700);
+  sfx.tone(180, .5, 'sawtooth', .16, 700);
   if (!reduce) await A.animate([
     {transform:'scale(1)'},{transform:'scale(.86) rotate(-5deg)'},{transform:'scale(.86) rotate(5deg)'},
     {transform:'scale(.86) rotate(-5deg)'},{transform:'scale(.9) rotate(0)'}], {duration:520}).finished;
   burst(kind, ca.x, ca.y, .5);
   // とっしん
-  sfx.noise(.35, 900, .3);
+  sfx.noise(.35, 900, .44);
   const trail = setInterval(() => { const c = center(A); burst(kind, c.x, c.y, .15); }, 40);
   if (!reduce) await A.animate([{transform:'translateY(0) rotate(0)'},{transform:`translateY(${dy}px) rotate(${w===1?360:-360}deg) scale(1.15)`}], {duration:360, easing:'cubic-bezier(.5,0,.9,.6)', fill:'forwards'}).finished;
   clearInterval(trail);
   // ヒット
   burst(kind, cd.x, cd.y, 1.3);
-  sfx.noise(.25, 300, .5); sfx.tone(90, .3, 'sine', .4, 40);
+  // 90Hz→40Hz の低音は iPhone の内蔵スピーカーでは ほとんど鳴らないので、
+  // 中高域のアタック＋中域の胴鳴りで「当たった」と分かるようにする
+  sfx.noise(.16, 2400, .62);                     // バチッ
+  sfx.tone(520, .22, 'square', .5, 130);         // ドゥン（中域から下げる）
+  setTimeout(() => sfx.noise(.2, 800, .5), 55);  // ドスッ
+  if (dmg > 1) setTimeout(() => sfx.tone(880, .2, 'square', .42, 220), 110);   // 2つ削るときは追い打ち
   const push = l === 1 ? 26 : -26;
   D.animate([
     {transform:'translate(0,0)', filter:'none'},
@@ -1211,7 +1234,7 @@ function arenaShake(){
 async function doMega(p){
   if (!canMega(p)) return;
   B.busy = true;
-  B.megaUsed[p] = true; B.bond[p] = 0; B.mega[p] = MEGA_ROUNDS;
+  B.bond[p] = 0; B.mega[p] = MEGA_ROUNDS;
   await megaCutIn(p);
   $('#f'+p).classList.add('mega');
   for (const q of [1,2]) renderBond(q);
@@ -1273,7 +1296,7 @@ async function megaEnd(p){
 async function knockOut(l){
   const D = $('#f'+l), cd = center(D);
   setBanner(B.size > 1 ? `${sideName(l)}の ${ORD[B.idx[l]]} ダウン！` : 'やったー！');
-  sfx.tone(300, .8, 'sawtooth', .1, 60);
+  sfx.tone(300, .8, 'sawtooth', .2, 60);
   burst(typeInfo(cur(3 - l).type)[2], cd.x, cd.y, 1.6);
   await D.animate([{transform:'translate(0,0) rotate(0) scale(1)', opacity:1},
     {transform:`translate(${l===1?160:-160}px, ${l===1?220:-220}px) rotate(${l===1?720:-720}deg) scale(.3)`, opacity:0}],
@@ -1282,7 +1305,7 @@ async function knockOut(l){
 /* つぎのピックが 自分がわから 登場する。ハートは 3つで 仕切りなおし */
 async function swapIn(p){
   const f = $('#f'+p), pk = cur(p);
-  // メガシンカしたピックが たおれたら 効果も消える（使用済みフラグは残す）
+  // メガシンカしたピックが たおれたら 効果も消える
   if (B.mega[p] > 0){ B.mega[p] = 0; f.classList.remove('mega'); }
   resetFighter(p);
   setFighter(p);
@@ -1340,7 +1363,7 @@ async function finish(w, l){
     + `</div>`;
   $('#battle').append(r);   // アリーナではなくバトル画面全体を覆い、下の手えらびを隠す
   sfx.say(sweep ? `${who}の かんぜんしょうり！` : `${who}の かち！`);
-  [523,659,784,1047,1319].forEach((f,i) => setTimeout(() => sfx.tone(f,.2,'square',.12), i*120));
+  [523,659,784,1047,1319].forEach((f,i) => setTimeout(() => sfx.tone(f,.2,'square',.26), i*120));
   setTimeout(() => sfx.noise(.5, 3200, .1), 620);   // キラキラ
   r.querySelector('#again').onclick = startBattle;
   r.querySelector('#toHome').onclick = () => show('home');
