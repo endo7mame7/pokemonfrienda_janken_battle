@@ -139,21 +139,22 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 .hand circle{fill:none;stroke:var(--sun);stroke-width:8;stroke-dasharray:301;stroke-dashoffset:301}
 .hand.holding circle{transition:stroke-dashoffset .5s linear;stroke-dashoffset:0}
 .locked{font-family:var(--display);font-size:30px;color:var(--sun);text-shadow:0 3px 0 rgba(0,0,0,.3)}
-.bondrow{display:flex;align-items:center;justify-content:center;gap:9px;width:min(88%,330px);flex-shrink:0}
-.bond{position:relative;flex:1;min-width:0;height:15px;border-radius:99px;background:rgba(0,0,0,.32);overflow:hidden}
-/* メガストーン型のボタン。ふだんは くすんだ石、ゲージ満タンで 虹に輝く */
-.stonebtn{position:relative;width:40px;height:40px;border-radius:50%;flex-shrink:0;touch-action:none;
+.bond{position:relative;width:min(88%,330px);height:15px;border-radius:99px;background:rgba(0,0,0,.32);
+  overflow:hidden;flex-shrink:0}
+/* メガストーン型のボタン。ピックの隣に置き、fighter の外なので 攻撃アニメで動かない */
+.frow{display:flex;align-items:center;justify-content:center;gap:10px}
+.stonebtn{position:relative;width:min(17vw,66px);aspect-ratio:1;border-radius:50%;flex-shrink:0;touch-action:none;
   background:radial-gradient(circle at 34% 28%,#8f9ac4,#4a5478 55%,#232a48);
-  box-shadow:0 2px 0 rgba(0,0,0,.45),inset 0 0 7px rgba(0,0,0,.45)}
+  box-shadow:0 3px 0 rgba(0,0,0,.45),inset 0 0 10px rgba(0,0,0,.45)}
 .stonebtn::after{content:'';position:absolute;inset:13%;border-radius:50%;pointer-events:none;
   background:radial-gradient(circle at 33% 26%,rgba(255,255,255,.9),rgba(255,255,255,.06) 48%,rgba(0,0,0,.3))}
-.stonebtn svg{position:absolute;inset:-5px;width:calc(100% + 10px);height:calc(100% + 10px);
+.stonebtn svg{position:absolute;inset:-6px;width:calc(100% + 12px);height:calc(100% + 12px);
   transform:rotate(-90deg);pointer-events:none}
-.stonebtn circle{fill:none;stroke:#fff;stroke-width:4;stroke-dasharray:126;stroke-dashoffset:126}
+.stonebtn circle{fill:none;stroke:#fff;stroke-width:5;stroke-dasharray:208;stroke-dashoffset:208}
 .stonebtn.holding circle{transition:stroke-dashoffset .5s linear;stroke-dashoffset:0}
-.bondrow.ready .stonebtn{background:var(--rbc);animation:rbspin 2.2s linear infinite;
-  box-shadow:0 0 9px #fff,0 0 20px #c56bff,0 2px 0 rgba(0,0,0,.45)}
-.bondrow.cantmega .stonebtn{opacity:.3}
+.stonebtn.ready{background:var(--rbc);animation:rbspin 2.2s linear infinite;
+  box-shadow:0 0 12px #fff,0 0 26px #c56bff,0 3px 0 rgba(0,0,0,.45)}
+.stonebtn.cantmega{opacity:.28}
 .bond i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:linear-gradient(90deg,#f0582a,#ffb03f,#ffd23f);transition:width .45s ease}
 .bond b{position:absolute;inset:0;display:grid;place-items:center;font-size:9px;font-weight:800;color:#fff;
   text-shadow:0 1px 2px rgba(0,0,0,.95),0 0 3px rgba(0,0,0,.7);letter-spacing:.02em}
@@ -175,7 +176,7 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 .fighter.mega::before{content:'';position:absolute;inset:-16%;border-radius:50%;z-index:-1;
   background:var(--rbc);filter:blur(16px);opacity:.5;animation:rbspin 3.5s linear infinite}
 @media (prefers-reduced-motion:reduce){
-  .bond.full i,.bond.mega i,.bondrow.ready .stonebtn,.megabadge,.fighter.mega img,.fighter.mega::before,
+  .bond.full i,.bond.mega i,.stonebtn.ready,.megabadge,.fighter.mega img,.fighter.mega::before,
   .megacut .rbrays,.megacut .rings i,.megacut .stone,.megacut .ct b,.cutin.mega .ct b,
   .megaintro .stone,.megaintro .band,.megaintro .ct b,.megaintro .shock{animation:none}
   .fighter.mega img{filter:drop-shadow(0 0 12px #c56bff) drop-shadow(0 0 22px #ffd23f) drop-shadow(0 6px 0 rgba(0,0,0,.35))}
@@ -412,17 +413,21 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 
 <!-- バトル -->
 <section class="screen" id="battle" hidden>
-  <div class="zone p2" id="zone2"><div class="msg"></div><div class="hands"></div><div class="bondrow"><div class="bond"><i></i><b></b></div>
-    <button class="stonebtn" aria-label="メガシンカ"><svg viewBox="0 0 46 46"><circle cx="23" cy="23" r="20"/></svg></button></div></div>
+  <div class="zone p2" id="zone2"><div class="msg"></div><div class="hands"></div><div class="bond"><i></i><b></b></div></div>
   <div class="arena" id="arena">
-    <div class="fighter f2" id="f2"><div class="spin"><div class="stat"><div class="hearts"></div><div class="roster"></div></div><img alt=""><div class="throw"></div></div></div>
+    <div class="frow">
+      <div class="fighter f2" id="f2"><div class="spin"><div class="stat"><div class="hearts"></div><div class="roster"></div></div><img alt=""><div class="throw"></div></div></div>
+      <button class="stonebtn s2" aria-label="メガシンカ"><svg viewBox="0 0 74 74"><circle cx="37" cy="37" r="33"/></svg></button>
+    </div>
     <div class="banner" id="banner"></div>
-    <div class="fighter f1" id="f1"><div class="spin"><div class="throw"></div><img alt=""><div class="stat"><div class="hearts"></div><div class="roster"></div></div></div></div>
+    <div class="frow">
+      <button class="stonebtn s1" aria-label="メガシンカ"><svg viewBox="0 0 74 74"><circle cx="37" cy="37" r="33"/></svg></button>
+      <div class="fighter f1" id="f1"><div class="spin"><div class="throw"></div><img alt=""><div class="stat"><div class="hearts"></div><div class="roster"></div></div></div></div>
+    </div>
     <canvas id="fx"></canvas>
     <button class="quit" id="quitBtn" aria-label="やめる">✕</button>
   </div>
-  <div class="zone p1" id="zone1"><div class="msg"></div><div class="hands"></div><div class="bondrow"><div class="bond"><i></i><b></b></div>
-    <button class="stonebtn" aria-label="メガシンカ"><svg viewBox="0 0 46 46"><circle cx="23" cy="23" r="20"/></svg></button></div></div>
+  <div class="zone p1" id="zone1"><div class="msg"></div><div class="hands"></div><div class="bond"><i></i><b></b></div></div>
 </section>
 
 <script>
@@ -431,7 +436,7 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 /* 開発用のバージョン表示。index.html に手を入れたら ここも更新する。
    iPhoneのホーム画面から起動すると 古いキャッシュのままのことがあるので、
    いま端末に入っているものを ホーム下部で確認できるようにしている */
-const VERSION = '0.7.0';
+const VERSION = '0.7.1';
 const BUILD = '2026-09-17';
 
 const TYPES = [
@@ -1017,7 +1022,7 @@ function renderHearts(){
 }
 /* メガストーンのボタンは出しっぱなしなので 配線は起動時に1回だけ */
 for (const p of [1,2]){
-  const sb = $('#zone'+p+' .stonebtn');
+  const sb = $('#arena .stonebtn.s'+p);
   let t = null;
   sb.addEventListener('pointerdown', ev => {
     ev.preventDefault(); sfx.unlock();
@@ -1032,14 +1037,13 @@ for (const p of [1,2]){
   sb.addEventListener('contextmenu', e => e.preventDefault());
 }
 function renderBond(p){
-  const row = $('#zone'+p+' .bondrow'), bar = row.querySelector('.bond');
+  const bar = $('#zone'+p+' .bond');
   const fill = bar.querySelector('i'), lb = bar.querySelector('b');
-  const sb = row.querySelector('.stonebtn');
+  const sb = $('#arena .stonebtn.s'+p);
   const mk = megaKey(p);
   const usable = !!cur(p)?.mega;
   // 満タンのときだけ ストーンが虹に輝く。使ったら また くすんだ色に戻る
-  row.className = 'bondrow' + (canMega(p) ? ' ready' : '') + (usable ? '' : ' cantmega');
-  sb.classList.remove('holding');
+  sb.className = 'stonebtn s' + p + (canMega(p) ? ' ready' : '') + (usable ? '' : ' cantmega');
   sb.disabled = !usable;
   if (mk){
     bar.className = 'bond mega';
