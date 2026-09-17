@@ -81,6 +81,9 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 .card .nm{font-weight:800;font-size:14px}
 .chip{display:inline-block;font-size:11px;font-weight:800;padding:2px 8px;border-radius:99px;color:#fff}
 .card .del{position:absolute;top:4px;right:4px;width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.35);font-size:14px}
+.card.edit:active{transform:scale(.97)}
+.card .editic{position:absolute;left:7px;top:7px;font-size:12px;opacity:.8;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))}
 .card.used{opacity:.55}
 .card .usedlb{font-size:10px;font-weight:800;color:var(--sun);line-height:1.2}
 .card.sel{outline:4px solid var(--sun)}
@@ -279,7 +282,7 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 <!-- ずかん -->
 <section class="screen" id="dex" hidden>
   <div class="bar"><button class="back" data-go="home" aria-label="もどる">←</button><h2>ピックずかん</h2></div>
-  <p class="hint">＋ から ピックを しゃしんで とうろく。ピックは このiPhoneの中だけに ほぞんされます。</p>
+  <p class="hint">＋ から ピックを しゃしんで とうろく。カードを タップすると なおせます。<br>ピックは このiPhoneの中だけに ほぞんされます。</p>
   <div class="grid" id="dexGrid"></div>
 </section>
 
@@ -291,7 +294,7 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 
 <!-- とうろく -->
 <section class="screen" id="editor" hidden>
-  <div class="bar"><button class="back" data-go="dex" aria-label="もどる">←</button><h2>ピックを とうろく</h2></div>
+  <div class="bar"><button class="back" data-go="dex" aria-label="もどる">←</button><h2 id="edTitle">ピックを とうろく</h2></div>
   <div class="pickwrap">
     <button class="btn small" id="camBtn">📷 しゃしんを とる</button>
     <button class="btn sub small" id="libBtn">🖼 アルバムから</button>
@@ -337,7 +340,7 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 /* 開発用のバージョン表示。index.html に手を入れたら ここも更新する。
    iPhoneのホーム画面から起動すると 古いキャッシュのままのことがあるので、
    いま端末に入っているものを ホーム下部で確認できるようにしている */
-const VERSION = '0.4.0';
+const VERSION = '0.4.1';
 const BUILD = '2026-09-17';
 
 const TYPES = [
@@ -361,6 +364,7 @@ const megaInfo = k => MEGA.find(m => m[0] === k) || null;
 const MEGA_ROUNDS = 3;          // メガシンカが つづく ラウンドすう
 const BOND_MAX = 100;           // きずなゲージ
 const BOND_GAIN = {lose:50, win:25, draw:15};
+const BOND_STREAK = 25;   // 連敗が続くほど 1回あたりの上乗せが増える
 /* 溜まり方に運をまぜる。同じ展開でも 発動タイミングが毎回ずれる */
 const bondRoll = base => Math.round(base * (0.8 + Math.random() * 0.4));
 const BEATS = {gu:'choki', choki:'pa', pa:'gu'};
@@ -561,14 +565,18 @@ function renderDex(){
   add.innerHTML = '<b>＋</b>あたらしい ピック'; add.onclick = () => openEditor();
   g.append(add);
   for (const pk of picks){
-    const c = document.createElement('div'); c.className = 'card';
+    const c = document.createElement('div'); c.className = 'card edit';
     const mi = megaInfo(pk.mega);
     c.innerHTML = `<img src="${pk.img}" alt=""><div class="nm">${esc(pk.name)}</div>${chipHTML(pk.type)}<div style="font-size:12px">${esc(pk.move)}</div>`
       + (mi ? `<div class="megabadge" style="background:${mi[3]}">⚡${esc(mi[1])}</div>` : '')
-      + `<button class="del" aria-label="けす">✕</button>`;
-    c.querySelector('.del').onclick = () => confirmBox(`「${pk.name}」を けしますか？`, async () => {
-      await store.del(pk.id); picks = picks.filter(x => x.id !== pk.id); renderDex();
-    });
+      + `<div class="editic" aria-hidden="true">✏️</div><button class="del" aria-label="けす">✕</button>`;
+    c.onclick = () => openEditor(pk);          // カードをタップして なおす
+    c.querySelector('.del').onclick = e => {
+      e.stopPropagation();
+      confirmBox(`「${pk.name}」を けしますか？`, async () => {
+        await store.del(pk.id); picks = picks.filter(x => x.id !== pk.id); renderDex();
+      });
+    };
     g.append(c);
   }
 }
@@ -576,6 +584,9 @@ function renderDex(){
 /* ---------- とうろくエディタ ---------- */
 const cv = $('#edCanvas'), cx = cv.getContext('2d');
 const ed = {img:null, orient:'h', tx:0, ty:0, s:1, rot:0, fine:0, type:'ノーマル', mega:null};
+let editingId = null;   // なおしているピックのid（新規なら null）
+/* 切り抜き済みの画像は 枠とおなじ比なので ぴったり収まる倍率にする */
+function fitExisting(){ ed.s = frame().fw / ed.img.width; ed.tx = 0; ed.ty = 0; ed.rot = 0; ed.fine = 0; }
 const typeBox = $('#typeBox');
 TYPES.forEach(([n,col]) => {
   const b = document.createElement('button'); b.textContent = n; b.style.background = col;
@@ -593,11 +604,31 @@ const megaBox = $('#megaBox');
   megaBox.append(b);
 });
 function syncMegas(){ [...megaBox.children].forEach(b => b.classList.toggle('on', (b.dataset.mega || null) === ed.mega)); }
-function openEditor(){
-  Object.assign(ed, {img:null, orient:'h', tx:0, ty:0, s:1, rot:0, fine:0, type:'ノーマル', mega:null});
-  $('#nameIn').value = ''; $('#moveIn').value = ''; $('#rotRange').value = 0;
+/* pk を渡すと そのピックを なおすモードになる */
+function openEditor(pk){
+  editingId = pk ? pk.id : null;
+  Object.assign(ed, {img:null, fromExisting:false, orient: pk?.orient || 'h', tx:0, ty:0, s:1, rot:0, fine:0,
+    type: pk?.type || 'ノーマル', mega: pk?.mega || null});
+  $('#nameIn').value = pk?.name || '';
+  $('#moveIn').value = pk?.move || '';
+  $('#rotRange').value = 0;
   syncRot(); syncTypes(); syncMegas(); syncOrient();
+  $('#edTitle').textContent = pk ? 'ピックを なおす' : 'ピックを とうろく';
+  $('#saveBtn').textContent = pk ? 'なおす' : 'とうろくする';
+  $('#edTip').textContent = pk ? 'しゃしんは そのまま。かえたいときは とりなおしてね'
+                               : '1本ゆびで いどう・2本ゆびで かくだい／かいてん';
   show('editor'); sizeCanvas();
+  if (pk){
+    // 切り抜き済みの画像を そのまま枠にはめ直す。写真を選び直さなければ 見たまま保存される
+    const im = new Image();
+    im.onload = () => {
+      if (editingId !== pk.id) return;     // 読み込み中に画面を離れた
+      ed.img = im; ed.fromExisting = true;
+      fitExisting();
+      draw();
+    };
+    im.src = pk.img;
+  }
 }
 function sizeCanvas(){
   const w = cv.parentElement.clientWidth, h = Math.round(Math.min(w * 1.05, window.innerHeight * 0.5));
@@ -648,7 +679,8 @@ function loadFile(f){
     const c = document.createElement('canvas'); c.width = Math.round(im.width*k); c.height = Math.round(im.height*k);
     c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
     URL.revokeObjectURL(url);
-    ed.img = c;
+    ed.img = c; ed.fromExisting = false;
+    $('#edTip').textContent = '1本ゆびで いどう・2本ゆびで かくだい／かいてん';
     const {W,H} = frame();
     ed.s = Math.max(W / c.width, H / c.height) * 1.6; ed.tx = 0; ed.ty = 0; ed.rot = 0; ed.fine = 0;
     $('#rotRange').value = 0; syncRot(); draw();
@@ -668,7 +700,12 @@ $('#rotL').onclick = () => { ed.rot -= 90; draw(); };
 $('#rotR').onclick = () => { ed.rot += 90; draw(); };
 $('#zIn').onclick = () => { ed.s *= 1.1; draw(); };
 $('#zOut').onclick = () => { ed.s /= 1.1; draw(); };
-$('#edReset').onclick = () => { if (ed.img){ const {W,H} = frame(); ed.s = Math.max(W/ed.img.width, H/ed.img.height)*1.6; ed.tx=ed.ty=ed.rot=0; $('#rotRange').value=0; syncRot(); draw(); } };
+$('#edReset').onclick = () => {
+  if (!ed.img) return;
+  if (ed.fromExisting) fitExisting();          // なおすときは 枠ぴったりに戻す
+  else { const {W,H} = frame(); ed.s = Math.max(W/ed.img.width, H/ed.img.height)*1.6; ed.tx=ed.ty=ed.rot=0; }
+  $('#rotRange').value=0; syncRot(); draw();
+};
 
 /* ジェスチャー：1本指で移動、2本指で拡大・回転 */
 const ptrs = new Map();
@@ -706,6 +743,7 @@ cv.addEventListener('wheel', e => { e.preventDefault(); ed.s *= e.deltaY < 0 ? 1
 window.addEventListener('resize', () => { if (!$('#editor').hidden) sizeCanvas(); });
 
 $('#saveBtn').onclick = async () => {
+  const old = editingId ? picks.find(x => x.id === editingId) : null;
   if (!ed.img) return toast('さきに しゃしんを えらんでね');
   const name = $('#nameIn').value.trim(); if (!name) return toast('なまえを いれてね');
   const move = $('#moveIn').value.trim() || 'たいあたり';
@@ -717,9 +755,13 @@ $('#saveBtn').onclick = async () => {
   o.beginPath(); pickPath(o, fx, fy, fw, fh, ed.orient); o.clip();
   o.imageSmoothingQuality = 'high';
   drawImg(o, W, H);
-  const pk = {id:'p-'+Date.now(), name, type:ed.type, move, orient:ed.orient, mega:ed.mega, img:out.toDataURL('image/png'), created:Date.now()};
-  await store.put(pk); picks.push(pk);
-  toast('とうろく しました'); sfx.tone(660,.08); setTimeout(()=>sfx.tone(990,.12),90);
+  const pk = {id: old ? old.id : 'p-'+Date.now(), name, type:ed.type, move, orient:ed.orient,
+    mega:ed.mega, img:out.toDataURL('image/png'), created: old ? old.created : Date.now()};
+  if (old?.sample) pk.sample = true;
+  await store.put(pk);
+  if (old) picks[picks.indexOf(old)] = pk; else picks.push(pk);
+  editingId = null;
+  toast(old ? 'なおしました' : 'とうろく しました'); sfx.tone(660,.08); setTimeout(()=>sfx.tone(990,.12),90);
   show('dex');
 };
 
@@ -804,6 +846,7 @@ function tick(){
 /* size 人ずつの勝ち抜き戦。team/hp は出場順の配列、idx が今たたかっているピック */
 const B = {size:1, team:{1:[],2:[]}, hp:{1:[],2:[]}, idx:{1:0,2:0},
   bond:{1:0,2:0}, megaUsed:{1:false,2:false}, mega:{1:0,2:0},   // きずな / 使用済み / のこりラウンド
+  streak:{1:0,2:0},                                            // 連敗数
   choice:{1:null,2:null}, busy:false, over:false};
 const cur = p => B.team[p][B.idx[p]];
 const curHp = p => B.hp[p][B.idx[p]] ?? 0;
@@ -824,7 +867,7 @@ function startBattle(){
     B.team[p] = team[p].map(id => picks.find(x => x.id === id));
     B.hp[p] = B.team[p].map(() => MAXHP);
     B.idx[p] = 0;
-    B.bond[p] = 0; B.megaUsed[p] = false; B.mega[p] = 0;
+    B.bond[p] = 0; B.megaUsed[p] = false; B.mega[p] = 0; B.streak[p] = 0;
     $('#f'+p).classList.remove('mega');
     resetFighter(p);
     setFighter(p);
@@ -864,9 +907,16 @@ function renderBond(p){
   const pct = Math.round(B.bond[p] / BOND_MAX * 100);
   bar.className = 'bond' + (canMega(p) ? ' full' : '');
   fill.style.width = pct + '%';
-  lb.textContent = B.megaUsed[p] ? 'メガストーンは つかった'
-    : !cur(p)?.mega ? `きずな ${pct}%`
-    : pct >= 100 ? 'メガシンカ できる！' : `きずな ${pct}%`;
+  // メガシンカできないピックは 理由が分かるように出す（ゲージだけ満タンでボタンが出ないと混乱する）
+  lb.textContent = !cur(p)?.mega ? 'この ピックは メガシンカ できない'
+    : B.megaUsed[p] ? 'メガストーンは つかった'
+    : pct >= 100 ? '⚡ メガシンカ できる！' : `きずな ${pct}%`;
+}
+/* 連敗ボーナスがついたとき ゲージを一瞬光らせる */
+function boostBond(p){
+  const bar = $('#zone'+p+' .bond');
+  if (!reduce) bar.animate([{filter:'brightness(2.4)'},{filter:'brightness(1)'}], {duration:750});
+  sfx.tone(1320, .16); setTimeout(() => sfx.tone(1760, .16), 110);
 }
 function renderRoster(){
   for (const p of [1,2]){
@@ -975,9 +1025,12 @@ async function resolve(){
   }
   renderHearts(); renderRoster();
   await wait(dmg ? 500 : 1100);
-  // きずなは 負けたほうに 多くたまる（運の係数つき）
+  // きずなは 負けたほうに 多くたまる（運の係数つき）。連敗するほど 上乗せが増える
+  B.streak[lose]++; B.streak[win] = 0;
+  const bonus = BOND_STREAK * (B.streak[lose] - 1);
   addBond(win, BOND_GAIN.win);
-  addBond(lose, BOND_GAIN.lose);
+  addBond(lose, BOND_GAIN.lose + bonus);
+  if (bonus) boostBond(lose);
   if (curHp(lose) <= 0){
     await knockOut(lose);
     B.idx[lose]++; renderRoster();
