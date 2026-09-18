@@ -442,7 +442,7 @@ h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
 /* 開発用のバージョン表示。index.html に手を入れたら ここも更新する。
    iPhoneのホーム画面から起動すると 古いキャッシュのままのことがあるので、
    いま端末に入っているものを ホーム下部で確認できるようにしている */
-const VERSION = '0.10.0';
+const VERSION = '0.10.1';
 const BUILD = '2026-09-18';
 
 /* [表示名, チップの色, エフェクト種別]。エフェクト種別は 18タイプぜんぶ ちがうものにして、
@@ -470,11 +470,15 @@ const MEGA = [
   ['erase',   'てを けす',             'あいての ては 2つに へる',              '#566a85', 'じゃま'],
   ['shuffle', 'てを かくす',           'あいての ては ぜんぶ ？に なる',         '#4b2d86', 'じゃま'],
   ['steal',   'きずなを うばう',       'かつと あいての きずなが 0に なる',      '#6a3cf0', 'じゃま'],
-  ['again',   'もういちど メガシンカ', 'かつと きずなが また 満タンに なる',     '#c44f96', 'きずな'],
 ];
 const megaInfo = k => MEGA.find(m => m[0] === k) || null;
 /* メガシンカ技の名前。登録していなければ そのパターンの既定名を使う */
 const megaMoveOf = pk => pk?.megaMove || megaInfo(pk?.mega)?.[1] || '';
+/* 保存ずみのピックが 今はない技キーを 持っていることがある
+   （v0.10.0 の「もういちど メガシンカ」など）。知らないキーは メガシンカなし にする。
+   そうしないと ゲージは満タンに光るのに 技が何もはたらかず、
+   はたらかない＝解けない ので メガシンカしたまま 戻れなくなる */
+const megaKeyOf = pk => megaInfo(pk?.mega) ? pk.mega : null;
 const RAINBOW = ['#ff3b30','#ff9500','#ffd23f','#3ddc97','#23b8e8','#5b6bff','#c56bff'];
 const MEGA_ROUNDS = 1;          // メガシンカが つづく ラウンドすう（こうげき1回ぶん）
 const BOND_MAX = 100;           // きずなゲージ
@@ -637,7 +641,7 @@ function renderHome(){
       b.className = 'slot p' + p;
       b.innerHTML = `<div class="ord">${i+1}</div>` + (pk
         ? `<img src="${pk.img}" alt=""><div class="meta"><div class="nm">${esc(pk.name)}</div>${chipHTML(pk.type)}</div>`
-          + (pk.mega ? `<div class="megaic">⚡</div>` : '')
+          + (megaInfo(pk.mega) ? `<div class="megaic">⚡</div>` : '')
         : `<div class="empty">？</div><div class="meta"><div class="nm">タップして えらぶ</div></div>`);
       b.onclick = () => { selFor = {p, i}; renderSelect(); show('select'); };
       side.append(b);
@@ -659,7 +663,7 @@ function renderSelect(){
     const c = document.createElement('button');
     c.className = 'card' + (team[p][i] === pk.id ? ' sel' : '') + (used ? ' used' : '');
     c.innerHTML = `<img src="${pk.img}" alt=""><div class="nm">${esc(pk.name)}</div>${chipHTML(pk.type)}`
-      + (pk.mega ? `<div class="megaic">⚡</div>` : '')
+      + (megaInfo(pk.mega) ? `<div class="megaic">⚡</div>` : '')
       + (used ? `<div class="usedlb">${ORD[at]}で つかってるよ</div>` : '');
     c.onclick = () => {
       if (used){ team[p][at] = team[p][i]; toast(`${ORD[at]}と いれかえたよ`); }  // 重複させずに入れ替える
@@ -742,7 +746,7 @@ function syncMegas(){
 function openEditor(pk){
   editingId = pk ? pk.id : null;
   Object.assign(ed, {img:null, fromExisting:false, orient: pk?.orient || 'h', tx:0, ty:0, s:1, rot:0, fine:0,
-    type: pk?.type || 'ノーマル', mega: pk?.mega || null});
+    type: pk?.type || 'ノーマル', mega: megaKeyOf(pk)});
   $('#megaMoveIn').value = pk?.megaMove || '';
   $('#nameIn').value = pk?.name || '';
   $('#moveIn').value = pk?.move || '';
@@ -1099,11 +1103,11 @@ const B = {size:1, team:{1:[],2:[]}, hp:{1:[],2:[]}, idx:{1:0,2:0},
 const cur = p => B.team[p][B.idx[p]];
 const curHp = p => B.hp[p][B.idx[p]] ?? 0;
 /* いま発動中のメガシンカ技のキー。発動していなければ null */
-const megaKey = p => B.mega[p] > 0 ? (cur(p)?.mega || null) : null;
+const megaKey = p => B.mega[p] > 0 ? megaKeyOf(cur(p)) : null;
 /* メガストーンを使える条件：ゲージ満タンで、いま出ているピックがメガシンカできて、
    まだ手を決めていないこと。ゲージを溜め直せば 何度でも使える */
 const canMega = p => B.mega[p] === 0 && B.bond[p] >= BOND_MAX
-  && !!cur(p)?.mega && !B.choice[p] && !B.busy && !B.over;
+  && !!megaKeyOf(cur(p)) && !B.choice[p] && !B.busy && !B.over;
 function addBond(p, base){ B.bond[p] = Math.min(BOND_MAX, B.bond[p] + bondRoll(base)); }
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const center = el => { const a = el.getBoundingClientRect(), b = $('#arena').getBoundingClientRect(); return {x:a.left - b.left + a.width/2, y:a.top - b.top + a.height/2}; };
@@ -1220,7 +1224,7 @@ function renderBond(p){
   bar.className = 'bond' + (canMega(p) ? ' full' : '');
   fill.style.width = pct + '%';
   // メガシンカできないピックは 理由が分かるように出す（ゲージだけ満タンでボタンが出ないと混乱する）
-  lb.textContent = !cur(p)?.mega ? 'この ピックは メガシンカ できない'
+  lb.textContent = !megaKeyOf(cur(p)) ? 'この ピックは メガシンカ できない'
     : pct >= 100 ? '⚡ メガシンカ できる！' : `きずな ${pct}%`;
 }
 /* ゲージを一瞬光らせる（音は 呼んだ側で 鳴らす） */
@@ -1401,13 +1405,6 @@ async function resolve(){
     fired.push(win);
     await wait(1000);
   }
-  if (wk === 'again'){
-    B.bond[win] = BOND_MAX; renderBond(win); flashBond(win);
-    setBanner('きずなが もどった！', 'もういちど メガシンカ できる');
-    [784, 988, 1319].forEach((f, i) => setTimeout(() => sfx.tone(f, .18, 'triangle', .3), i*100));
-    fired.push(win);
-    await wait(1000);
-  }
   // じゃんけんに負けただけでは 解けない。はたらいた技だけ 1回ぶん使う
   if (wk === 'crit' || wk === 'drain') fired.push(win);   // 勝ったときに はたらく技
   if (wk === 'storm' && tie) fired.push(win);             // あいこから けずったとき
@@ -1535,7 +1532,7 @@ async function doMega(p){
   await megaCutIn(p);                            // つづけて メガシンカのエフェクト
   $('#f'+p).classList.add('mega');
   // てを けす／かくす だけは じゃんけんの まえに はたらく技なので ここで かける
-  const k = cur(p)?.mega;
+  const k = megaKeyOf(cur(p));
   if (k === 'erase' || k === 'shuffle'){ applyHex(3 - p, k, p); await wait(reduce ? 200 : 1400); }
   B.busy = false;
   renderZone(p);
